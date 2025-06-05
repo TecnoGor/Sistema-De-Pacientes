@@ -32,7 +32,7 @@ import DataTable from "examples/Tables/DataTable";
 import authorsTableData from "layouts/tables/data/authorsTableData";
 import projectsTableData from "layouts/tables/data/projectsTableData";
 
-function Tables() {
+function Users() {
   const { columns, rows } = authorsTableData();
   const { columns: pColumns, rows: pRows } = projectsTableData();
 
@@ -81,7 +81,7 @@ function Tables() {
                 coloredShadow="info"
               >
                 <MDTypography variant="h6" color="white">
-                  Cosa
+                  Usuarios
                 </MDTypography>
               </MDBox>
               <MDBox pt={3}>
@@ -123,4 +123,4 @@ function Tables() {
   );
 }
 
-export default Tables;
+export default Users;

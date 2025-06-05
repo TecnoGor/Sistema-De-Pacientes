@@ -14,12 +14,18 @@ Coded by www.creative-tim.com
 */
 
 // @mui material components
+import { useState } from "react";
 import Grid from "@mui/material/Grid";
 import Card from "@mui/material/Card";
+import Icon from "@mui/material/Icon";
+import "bootstrap/dist/css/bootstrap.min.css";
 
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
+import MDButton from "components/MDButton";
+import Button from "react-bootstrap/Button";
+import Modal from "react-bootstrap/Modal";
 
 // Material Dashboard 2 React example components
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
@@ -32,7 +38,10 @@ import DataTable from "examples/Tables/DataTable";
 import authorsTableData from "layouts/tables/data/authorsTableData";
 import projectsTableData from "layouts/tables/data/projectsTableData";
 
-function Tables() {
+function Pacientes() {
+  const [show, setShow] = useState(false);
+  const handleClose = () => setShow(false);
+  const handleShow = () => setShow(true);
   const { columns, rows } = authorsTableData();
   const { columns: pColumns, rows: pRows } = projectsTableData();
 
@@ -80,12 +89,27 @@ function Tables() {
                 borderRadius="lg"
                 coloredShadow="info"
               >
-                <MDTypography variant="h6" color="white">
-                  Cosa
-                </MDTypography>
+                <MDTypography variant="h6" color="white"></MDTypography>
+                <MDButton variant="gradient" color="dark" onClick={handleShow}>
+                  <Icon sx={{ fontWeight: "bold" }}>person</Icon>
+                  &nbsp;Registrar Pacientes
+                </MDButton>
               </MDBox>
               <MDBox pt={3}>
-                {/* <Carnet number={4562112245947852} holder="jack peterson" expires="11/22" /> */}
+                <Modal show={show} onHide={handleClose} backdrop="static" keyboard={false}>
+                  <Modal.Header closeButton>
+                    <Modal.Title>Modal title</Modal.Title>
+                  </Modal.Header>
+                  <Modal.Body>
+                    I will not close if you click outside me. Do not even try to press escape key.
+                  </Modal.Body>
+                  <Modal.Footer>
+                    <Button variant="secondary" onClick={handleClose}>
+                      Close
+                    </Button>
+                    <Button variant="primary">Understood</Button>
+                  </Modal.Footer>
+                </Modal>
               </MDBox>
             </Card>
           </Grid>
@@ -123,4 +147,4 @@ function Tables() {
   );
 }
 
-export default Tables;
+export default Pacientes;

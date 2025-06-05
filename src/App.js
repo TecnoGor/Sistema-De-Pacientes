@@ -16,9 +16,9 @@ import { CacheProvider } from "@emotion/react";
 import createCache from "@emotion/cache";
 import routes from "routes";
 import { useMaterialUIController, setMiniSidenav, setOpenConfigurator } from "context";
-import brandWhite from "assets/images/logo-ct.png";
-import iposLight from "assets/images/Logo_Ipos.png";
-import brandDark from "assets/images/logo-ct-dark.png";
+// import brandWhite from "assets/images/logo-ct.png";
+import sirhossLight from "assets/images/favicon.png";
+// import brandDark from "assets/images/logo-ct-dark.png";
 import Login from "layouts/authentication/sign-in"; // Asegúrate de que esta ruta es correcta
 
 // Componente para rutas protegidas
@@ -147,7 +147,7 @@ export default function App() {
         <>
           <Sidenav
             color={sidenavColor}
-            brand={(transparentSidenav && !darkMode) || whiteSidenav ? iposLight : iposLight}
+            brand={(transparentSidenav && !darkMode) || whiteSidenav ? sirhossLight : sirhossLight}
             brandName="Sistema de Pacientes"
             routes={routes.filter(
               (route) => !route.hideWhenUnauthenticated || localStorage.getItem("authToken")
