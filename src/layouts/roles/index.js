@@ -14,21 +14,17 @@ Coded by www.creative-tim.com
 */
 
 // @mui material components
-import { useState } from "react";
 import Grid from "@mui/material/Grid";
 import Card from "@mui/material/Card";
-import Icon from "@mui/material/Icon";
 
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
-import MDButton from "components/MDButton";
 
 // Material Dashboard 2 React example components
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
-import RegPacientes from "examples/Modals/Pacientes/RegPacientes";
 import DataTable from "examples/Tables/DataTable";
 // import Carnet from "examples/Cards/Carnet";
 
@@ -36,10 +32,7 @@ import DataTable from "examples/Tables/DataTable";
 import authorsTableData from "layouts/tables/data/authorsTableData";
 import projectsTableData from "layouts/tables/data/projectsTableData";
 
-function Pacientes() {
-  const [show, setShow] = useState(false);
-  const handleClose = () => setShow(false);
-  const handleShow = () => setShow(true);
+function Roles() {
   const { columns, rows } = authorsTableData();
   const { columns: pColumns, rows: pRows } = projectsTableData();
 
@@ -87,14 +80,12 @@ function Pacientes() {
                 borderRadius="lg"
                 coloredShadow="info"
               >
-                <MDTypography variant="h6" color="white"></MDTypography>
-                <MDButton variant="gradient" color="dark" onClick={handleShow}>
-                  <Icon sx={{ fontWeight: "bold" }}>person</Icon>
-                  &nbsp;Registrar Pacientes
-                </MDButton>
+                <MDTypography variant="h6" color="white">
+                  Roles
+                </MDTypography>
               </MDBox>
               <MDBox pt={3}>
-                <RegPacientes hClose={handleClose} show={show} />
+                {/* <Carnet number={4562112245947852} holder="jack peterson" expires="11/22" /> */}
               </MDBox>
             </Card>
           </Grid>
@@ -132,4 +123,4 @@ function Pacientes() {
   );
 }
 
-export default Pacientes;
+export default Roles;

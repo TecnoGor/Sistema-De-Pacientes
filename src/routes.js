@@ -6,8 +6,10 @@ import RTL from "layouts/rtl";
 import Notifications from "layouts/notifications";
 import Profile from "layouts/profile";
 import Pacientes from "layouts/pacientes";
+import Consultas from "layouts/consultas";
 import Especialistas from "layouts/especialistas";
 import Users from "layouts/usuarios";
+import Roles from "layouts/roles";
 // import SignIn from "layouts/authentication/sign-in";
 // import SignUp from "layouts/authentication/sign-up";
 
@@ -26,16 +28,24 @@ const routes = [
   {
     type: "collapse",
     name: "Pacientes",
-    key: "tables",
+    key: "pacientes",
     icon: <Icon fontSize="small">personalinjury</Icon>,
     route: "/pacientes",
     component: <Pacientes />,
   },
   {
     type: "collapse",
-    name: "Especialistas",
-    key: "billing",
+    name: "Consultas Medicas",
+    key: "consultas",
     icon: <Icon fontSize="small">medication</Icon>,
+    route: "/consultas",
+    component: <Consultas />,
+  },
+  {
+    type: "collapse",
+    name: "Personal Médico",
+    key: "especialistas",
+    icon: <Icon fontSize="small">masks</Icon>,
     route: "/especialistas",
     component: <Especialistas />,
   },
@@ -59,17 +69,25 @@ const routes = [
     type: "collapse",
     name: "Perfil",
     key: "profile",
-    icon: <Icon fontSize="small">person2</Icon>,
+    icon: <Icon fontSize="small">accessibility</Icon>,
     route: "/profile",
     component: <Profile />,
   },
   {
     type: "collapse",
     name: "Usuarios",
-    key: "sign-in",
+    key: "users",
     icon: <Icon fontSize="small">group</Icon>,
     route: "/usuarios",
     component: <Users />,
+  },
+  {
+    type: "collapse",
+    name: "Roles y Funciones",
+    key: "roles",
+    icon: <Icon fontSize="small">gamepad</Icon>,
+    route: "/roles",
+    component: <Roles />,
   },
   // {
   //   type: "collapse",
