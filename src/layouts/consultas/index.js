@@ -81,7 +81,7 @@ function Consultas() {
                 coloredShadow="info"
               >
                 <MDTypography variant="h6" color="white">
-                  Cosa
+                  Consultas Medicas
                 </MDTypography>
               </MDBox>
               <MDBox pt={3}>

@@ -14,17 +14,21 @@ Coded by www.creative-tim.com
 */
 
 // @mui material components
+import React, { useState } from "react";
 import Grid from "@mui/material/Grid";
 import Card from "@mui/material/Card";
+import { Icon } from "@mui/material";
 
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
+import MDButton from "components/MDButton";
 
 // Material Dashboard 2 React example components
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
+import RegPersonalMedico from "examples/Modals/PersonalMedico/RegPersonalMedico";
 import DataTable from "examples/Tables/DataTable";
 // import Carnet from "examples/Cards/Carnet";
 
@@ -33,6 +37,9 @@ import authorsTableData from "layouts/tables/data/authorsTableData";
 import projectsTableData from "layouts/tables/data/projectsTableData";
 
 function Especialistas() {
+  const [show, setShow] = useState(false);
+  const handleClose = () => setShow(false);
+  const handleShow = () => setShow(true);
   const { columns, rows } = authorsTableData();
   const { columns: pColumns, rows: pRows } = projectsTableData();
 
@@ -81,11 +88,15 @@ function Especialistas() {
                 coloredShadow="info"
               >
                 <MDTypography variant="h6" color="white">
-                  Especialistas
+                  Personal Medico
                 </MDTypography>
+                <MDButton variant="gradient" color="dark" onClick={handleShow}>
+                  <Icon sx={{ fontWeight: "bold" }}>person</Icon>
+                  &nbsp;Registrar Personal
+                </MDButton>
               </MDBox>
               <MDBox pt={3}>
-                {/* <Carnet number={4562112245947852} holder="jack peterson" expires="11/22" /> */}
+                <RegPersonalMedico hClose={handleClose} show={show} />
               </MDBox>
             </Card>
           </Grid>
