@@ -13,7 +13,7 @@ app.use(express.json());
 const pool = new Pool({
   user: 'postgres',
   host: 'localhost',
-  database: 'sicven',
+  database: 'sirhos',
   password: 'postgres',
   port: 5432,
 });
@@ -27,6 +27,16 @@ app.get('/api/users', async (req, res) => {
         console.error(err);
         res.status(501).send('Error al obtener los datos');
     }
+});
+
+app.get('/api/pacientes', async (req, res) => {
+  try {
+      const { rows } = await pool.query('SELECT p.id_persona, p.nombres, p.apellidos, p.cedula FROM paciente pc INNER JOIN datospersonales dp ON dp.id_dpersonales = pc.dpersonalesid INNER JOIN persona p ON p.id_persona = dp.personaid');
+      res.json(rows);
+  } catch (err) {
+      console.error(err);
+      res.status(501).send('Error al obtener los datos');
+  }
 });
 
 app.get('/api/color_ger/:codger', async (req, res) => {
