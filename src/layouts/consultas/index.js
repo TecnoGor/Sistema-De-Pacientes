@@ -14,12 +14,16 @@ Coded by www.creative-tim.com
 */
 
 // @mui material components
+import { useState, useEffect } from "react";
 import Grid from "@mui/material/Grid";
 import Card from "@mui/material/Card";
+import Icon from "@mui/material/Icon";
+import axios from "axios";
 
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
+import MDButton from "components/MDButton";
 
 // Material Dashboard 2 React example components
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
@@ -33,8 +37,55 @@ import authorsTableData from "layouts/tables/data/authorsTableData";
 import projectsTableData from "layouts/tables/data/projectsTableData";
 
 function Consultas() {
-  const { columns, rows } = authorsTableData();
-  const { columns: pColumns, rows: pRows } = projectsTableData();
+  const [show, setShow] = useState(false);
+  const [consultas, setConsultas] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const handleClose = () => setShow(false);
+  const handleShow = () => setShow(true);
+
+  const fetchConsultas = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await axios.get("http://localhost:5002/api/especialistas");
+      setConsultas(response.data);
+    } catch (err) {
+      console.log("Error al obtener Consultas", err);
+      setError("Error al cargar las Consultas. Intentelo de nuevo.", err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchConsultas();
+  }, []);
+
+  const columns = [
+    { Header: "ID", accessor: "id_especialista", width: "10%" },
+    { Header: "Nombres", accessor: "nombres", width: "20%" },
+    { Header: "Apellidos", accessor: "apellidos", width: "20%" },
+    { Header: "Cédula", accessor: "cedula", width: "15%" },
+    { Header: "Acciones", accessor: "actions", width: "15%" },
+  ];
+
+  const rows = consultas.map((consulta) => ({
+    id_consulta: consulta.id_consulta,
+    nombres: consulta.nombres,
+    apellidos: consulta.apellidos,
+    cedula: consulta.cedula,
+    actions: (
+      <MDBox display="flex" gap={1}>
+        <MDButton variant="text" color="info" size="small">
+          <Icon>edit</Icon>&nbsp;Editar
+        </MDButton>
+        <MDButton variant="text" color="error" size="small">
+          <Icon>delete</Icon>&nbsp;Eliminar
+        </MDButton>
+      </MDBox>
+    ),
+  }));
 
   return (
     <DashboardLayout>
@@ -81,7 +132,7 @@ function Consultas() {
                 coloredShadow="info"
               >
                 <MDTypography variant="h6" color="white">
-                  Consultas Medicas
+                  Registrar Consulta
                 </MDTypography>
               </MDBox>
               <MDBox pt={3}>
@@ -89,7 +140,7 @@ function Consultas() {
               </MDBox>
             </Card>
           </Grid>
-          {/* <Grid item xs={12}>
+          <Grid item xs={12}>
             <Card>
               <MDBox
                 mx={2}
@@ -102,20 +153,44 @@ function Consultas() {
                 coloredShadow="info"
               >
                 <MDTypography variant="h6" color="white">
-                  Projects Table
+                  Consultas Medicas
                 </MDTypography>
               </MDBox>
               <MDBox pt={3}>
-                <DataTable
-                  table={{ columns: pColumns, rows: pRows }}
-                  isSorted={false}
-                  entriesPerPage={false}
-                  showTotalEntries={false}
-                  noEndBorder
-                />
+                {loading ? (
+                  <MDBox p={3} textAlign="center">
+                    <MDTypography variant="body2" color="text">
+                      Cargando Consultas...
+                    </MDTypography>
+                  </MDBox>
+                ) : error ? (
+                  <MDBox p={3} textAlign="center">
+                    <MDTypography variant="body2" color="error">
+                      {error}
+                    </MDTypography>
+                    <MDButton color="info" onClick={fetchConsultas} sx={{ mt: 2 }}>
+                      <Icon>refresh</Icon>&nbsp;Reintentar
+                    </MDButton>
+                  </MDBox>
+                ) : consultas.length === 0 ? (
+                  <MDBox p={3} textAlign="center">
+                    <MDTypography variant="body2" color="text">
+                      No hay consultas registradas
+                    </MDTypography>
+                  </MDBox>
+                ) : (
+                  <DataTable
+                    table={{ columns, rows }}
+                    isSorted={true}
+                    entriesPerPage={true}
+                    showTotalEntries={true}
+                    noEndBorder
+                    pagination={{ variant: "gradient", color: "info" }}
+                  />
+                )}
               </MDBox>
             </Card>
-          </Grid> */}
+          </Grid>
         </Grid>
       </MDBox>
       <Footer />

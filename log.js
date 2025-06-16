@@ -18,7 +18,7 @@ const pool = new Pool({
     host: 'localhost',
     database: 'sicven',
     password: 'postgres',
-    port: 5432,
+    port: 5433,
 });
 
 // Función para encriptar la contraseña en SHA-256

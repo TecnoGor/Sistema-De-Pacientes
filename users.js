@@ -15,7 +15,7 @@ const pool = new Pool({
   host: 'localhost',
   database: 'sirhos',
   password: 'postgres',
-  port: 5432,
+  port: 5433,
 });
 
 // Ruta para obtener los datos de la base de datos
@@ -32,6 +32,26 @@ app.get('/api/users', async (req, res) => {
 app.get('/api/pacientes', async (req, res) => {
   try {
       const { rows } = await pool.query('SELECT p.id_persona, p.nombres, p.apellidos, p.cedula FROM paciente pc INNER JOIN datospersonales dp ON dp.id_dpersonales = pc.dpersonalesid INNER JOIN persona p ON p.id_persona = dp.personaid');
+      res.json(rows);
+  } catch (err) {
+      console.error(err);
+      res.status(501).send('Error al obtener los datos');
+  }
+});
+
+app.get('/api/especialistas', async (req, res) => {
+  try {
+      const { rows } = await pool.query('SELECT p.id_persona, p.nombres, p.apellidos, p.cedula FROM medico m INNER JOIN datospersonales dp ON dp.id_dpersonales = m.dpersonalesid INNER JOIN persona p ON p.id_persona = dp.personaid');
+      res.json(rows);
+  } catch (err) {
+      console.error(err);
+      res.status(501).send('Error al obtener los datos');
+  }
+});
+
+app.get('/api/consultasMedicas', async (req, res) => {
+  try {
+      const { rows } = await pool.query('SELECT cm.codconsul, pn.nombres, pn.apellidos, cm.fechaingreso FROM consultamedica cm INNER JOIN paciente p ON cm.pacienteid = p.id_paciente INNER JOIN datospersonales dp ON p.dpersonalesid = dp.id_dpersonales INNER JOIN persona pn ON dp.personaid = pn.id_persona');
       res.json(rows);
   } catch (err) {
       console.error(err);
