@@ -66,7 +66,7 @@ function Footer({ company, links }) {
             favorite
           </Icon>
         </MDBox>
-        por la Gerencia de Sistemas de la Dirección de Tecnología de la Información y Comunicación.
+        por estudiantes de Informatica de la UPTEC-MS.
       </MDBox>
       <MDBox
         component="ul"

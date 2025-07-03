@@ -131,7 +131,7 @@ function DefaultNavbar({ transparent, light, action }) {
               fontSize: { xs: "1.90rem", sm: "1.80rem" },
             }}
           >
-            Sistema Integral de Carnetización Postal
+            Hospital Militar Vicente Salias Sanoja
           </MDTypography>
           {/* <DefaultNavbarLink icon="donut_large" name="dashboard" route="/dashboard" light={light} />
           <DefaultNavbarLink icon="person" name="profile" route="/profile" light={light} />

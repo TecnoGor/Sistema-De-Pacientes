@@ -40,7 +40,7 @@ import MDButton from "components/MDButton";
 import BasicLayout from "layouts/authentication/components/BasicLayout";
 
 // Images
-import bgImage from "assets/images/bg-sign-in-basic.jpeg";
+import bgImage from "assets/images/bgHPVSS.jpg";
 
 function Basic() {
   const [rememberMe, setRememberMe] = useState(false);
