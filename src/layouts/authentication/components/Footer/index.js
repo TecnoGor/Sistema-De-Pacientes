@@ -56,11 +56,11 @@ function Footer({ light }) {
                 favorite
               </Icon>
             </MDBox>
-            por
+            por los
             <Link href="https://www.ipostel.gob.ve/" target="_blank">
               <MDTypography variant="button" fontWeight="medium" color={light ? "white" : "dark"}>
-                &nbsp; Gerencia de Sistemas - Direccion de Tecnología de la Información y
-                Comunicación &nbsp;
+                &nbsp; Estudiantes de la Universidad Politecnica Territorial de Caracas - Mariscal
+                Sucre &nbsp;
               </MDTypography>
             </Link>
             por una mejor Seguridad.
@@ -83,13 +83,13 @@ function Footer({ light }) {
             })}
           >
             <MDBox component="li" pr={2} lineHeight={1}>
-              <Link href="https://www.ipostel.gob.ve/" target="_blank">
+              <Link href="https://uptecms.edu.ve/" target="_blank">
                 <MDTypography
                   variant="button"
                   fontWeight="regular"
                   color={light ? "white" : "dark"}
                 >
-                  IPOSTEL
+                  UPTEC-MS
                 </MDTypography>
               </Link>
             </MDBox>
