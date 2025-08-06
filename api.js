@@ -1,24 +1,40 @@
 const express = require('express');
+const fs = require('fs');
 const { Pool } = require('pg');
+const multer = require('multer');
+const path = require('path');
 const crypto = require('crypto');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
+require('dotenv').config({ path: '.env.development' });
 
 const app = express();
-const port = 5000;
+const port = process.env.REACT_APP_API_PORT;
 
-const SECRET_KEY = 'MAMALO';
+const SECRET_KEY = process.env.REACT_APP_API_KEY;
+const corsOptions = {
+    origin: [
+        process.env.REACT_APP_ORIGIN_URL,
+        process.env.REACT_APP_ORIGIN_LOCAL,
+        process.env.REACT_APP_ORIGIN_HOST
+    ],
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+};
 
 app.use(bodyParser.json());
-app.use(cors());
+app.use(cors(corsOptions));
+app.use(express.json({ limit: '10mb', extended: true }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 const pool = new Pool({
-    user: 'postgres',
-    host: 'localhost',
-    database: 'sirhos',
-    password: 'postgres',
-    port: 5433,
+    user: process.env.REACT_APP_DB_USER,
+    host: process.env.REACT_APP_DB_HOST,
+    database: process.env.REACT_APP_DB_NAME,
+    password: process.env.REACT_APP_DB_PASSWORD,
+    port: process.env.REACT_APP_DB_PORT,
 });
 
 // Función para encriptar la contraseña en SHA-256
@@ -35,6 +51,20 @@ app.post('/register', async (req, res) => {
         const result = await pool.query(
             'INSERT INTO users (firstname, secondname, ci, mail, phone, username, password, status, rol) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
             [firstname, secondname, ci, mail, phone, username, passwordHash, status, rol]
+        );
+        res.status(201).json(result.rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/regPersona', async (req, res) => {
+    const { cedula, nombres, apellidos } = req.body;
+
+    try {
+        const result = await pool.query(
+            'INSERT INTO persona (cedula, nombres, apellidos) VALUES ($1, $2, $3) RETURNING *',
+            [cedula, nombres, apellidos]
         );
         res.status(201).json(result.rows[0]);
     } catch (err) {
@@ -63,10 +93,37 @@ app.post('/login', async (req, res) => {
     }
 });
 
-// Ruta para consultar los usuarios
-app.post('/api/users', async (req, res) => {
+app.post('verify-token', async (req, res) => {
     try {
-        const { rows } = await pool.query('SELECT id, firstname, secondname, mail, phone, username, status, rol FROM users');
+        const token = req.headers.authorization?.split('')[1];
+        if (!token) return res.json({ valid: false });
+
+        const decoded = jwt.verify(token, SECRET_KEY);
+        const user = await pool.query('SELECT * FROM users WHERE codper = $q', [decoded.userId]);
+
+        if (user.length === 0) return res.json({ valid: false });
+
+        res.json({
+            valid: true,
+            user: {
+                codper: user.rows[0].codper,
+                firstname: user.rows[0].firstname,
+                rol: user.rows[0].rol
+            }
+        })
+    } catch (err) {
+        res.json({ valid: false });
+    }
+});
+
+app.post('logout', async (req, res) => {
+    // Desarrollo de invalidacion de token para lista negra
+});
+
+// Ruta para consultar los usuarios
+app.get('/api/users', async (req, res) => {
+    try {
+        const { rows } = await pool.query('SELECT id, firstname, secondname, ci, mail, phone, username FROM users');
         res.json(rows);
     } catch (err) {
         console.error(err);

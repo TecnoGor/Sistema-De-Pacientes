@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import PropTypes from "prop-types";
-import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import Icon from "@mui/material/Icon";
@@ -20,22 +20,7 @@ import { useMaterialUIController, setMiniSidenav, setOpenConfigurator } from "co
 import sirhossLight from "assets/images/favicon.png";
 // import brandDark from "assets/images/logo-ct-dark.png";
 import Login from "layouts/authentication/sign-in"; // Asegúrate de que esta ruta es correcta
-
-// Componente para rutas protegidas
-const ProtectedRoute = ({ children }) => {
-  const token = localStorage.getItem("authToken");
-  const { pathname } = useLocation();
-
-  if (!token && pathname !== "/authentication/sign-in") {
-    return <Navigate to="/authentication/sign-in" replace />;
-  }
-
-  return children;
-};
-
-ProtectedRoute.propTypes = {
-  children: PropTypes.node.isRequired,
-};
+import { ProtectedRoute } from "components/ProtectedRoutes";
 
 export default function App() {
   const [controller, dispatch] = useMaterialUIController();
@@ -52,6 +37,15 @@ export default function App() {
   const [onMouseEnter, setOnMouseEnter] = useState(false);
   const [rtlCache, setRtlCache] = useState(null);
   const { pathname } = useLocation();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      navigate("/authentication/sign-in");
+    }
+  }, [navigate]);
 
   // Cache for the rtl
   useMemo(() => {
@@ -166,11 +160,14 @@ export default function App() {
         <Route
           path="*"
           element={
-            <Navigate
-              to={localStorage.getItem("authToken") ? "/dashboard" : "/authentication/sign-in"}
-            />
+            localStorage.getItem("authToken") ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <Navigate to="/authentication/sign-in" replace />
+            )
           }
         />
+        <Route path="*" element={<Navigate to="/dashboard" />} />
       </Routes>
     </ThemeProvider>
   );
