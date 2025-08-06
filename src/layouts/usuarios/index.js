@@ -14,17 +14,22 @@ Coded by www.creative-tim.com
 */
 
 // @mui material components
+import { useEffect, useState } from "react";
 import Grid from "@mui/material/Grid";
 import Card from "@mui/material/Card";
+import Icon from "@mui/material/Icon";
+import axios from "axios";
 
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
+import MDButton from "components/MDButton";
 
 // Material Dashboard 2 React example components
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
+import RegPacientes from "examples/Modals/Pacientes/RegPacientes";
 import DataTable from "examples/Tables/DataTable";
 // import Carnet from "examples/Cards/Carnet";
 
@@ -33,8 +38,58 @@ import authorsTableData from "layouts/tables/data/authorsTableData";
 import projectsTableData from "layouts/tables/data/projectsTableData";
 
 function Users() {
-  const { columns, rows } = authorsTableData();
-  const { columns: pColumns, rows: pRows } = projectsTableData();
+  const [show, setShow] = useState(false);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const handleClose = () => setShow(false);
+  const handleShow = () => setShow(true);
+  // const { columns, rows } = authorsTableData();
+  // const { columns: pColumns, rows: pRows } = projectsTableData();
+  const API_Host = process.env.REACT_APP_API_URL;
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await axios.get(`${API_Host}/api/users`);
+      setUsers(response.data);
+    } catch (error) {
+      // console.log("Error al cargar los pacientes: ", error);
+      setError("Error al cargar los pacientes. Intentelo de nuevo. ", error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  });
+
+  const columns = [
+    { Header: "ID", accessor: "id_usuario", width: "10%" },
+    { Header: "Nombre de Usuario", accessor: "nuser", width: "20%" },
+    { Header: "Rol", accessor: "rolid", width: "20%" },
+    { Header: "Fecha de Creación", accessor: "fechacreacion", width: "15%" },
+    { Header: "Acciones", accessor: "actions", width: "15%" },
+  ];
+
+  const rows = users.map((user) => ({
+    id_usuario: user.id_usuario,
+    nuser: user.nuser,
+    rol: user.rolid,
+    fechacreacion: user.fechacreacion,
+    actions: (
+      <MDBox display="flex" gap={1}>
+        <MDButton variant="text" color="info" size="small">
+          <Icon>edit</Icon>&nbsp;Editar
+        </MDButton>
+        <MDButton variant="text" color="error" size="small">
+          <Icon>delete</Icon>&nbsp;Eliminar
+        </MDButton>
+      </MDBox>
+    ),
+  }));
 
   return (
     <DashboardLayout>
@@ -85,7 +140,37 @@ function Users() {
                 </MDTypography>
               </MDBox>
               <MDBox pt={3}>
-                {/* <Carnet number={4562112245947852} holder="jack peterson" expires="11/22" /> */}
+                {loading ? (
+                  <MDBox p={3} textAlign="center">
+                    <MDTypography variant="body2" color="text">
+                      Cargando usuarios...
+                    </MDTypography>
+                  </MDBox>
+                ) : error ? (
+                  <MDBox p={3} textAlign="center">
+                    <MDTypography variant="body2" color="error">
+                      {error}
+                    </MDTypography>
+                    <MDButton color="info" onClick={fetchUsers} sx={{ mt: 2 }}>
+                      <Icon>refresh</Icon>&nbsp;Reintentar
+                    </MDButton>
+                  </MDBox>
+                ) : users.length === 0 ? (
+                  <MDBox p={3} textAlign="center">
+                    <MDTypography variant="body2" color="text">
+                      No hay usuarios registrados
+                    </MDTypography>
+                  </MDBox>
+                ) : (
+                  <DataTable
+                    table={{ columns, rows }}
+                    isSorted={true}
+                    entriesPerPage={true}
+                    showTotalEntries={true}
+                    noEndBorder
+                    pagination={{ variant: "gradient", color: "info" }}
+                  />
+                )}
               </MDBox>
             </Card>
           </Grid>

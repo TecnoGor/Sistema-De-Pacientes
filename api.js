@@ -76,14 +76,15 @@ app.post('/regPersona', async (req, res) => {
 app.post('/login', async (req, res) => {
     const { username, password } = req.body;
     const passwordHash = hashPassword(password);
+    const status = 1;
 
     try {
         const result = await pool.query(
-            'SELECT * FROM usuarios WHERE nuser = $1 AND password = $2',
-            [username, passwordHash]
+            'SELECT * FROM usuarios WHERE nuser = $1 AND password = $2 AND status = $3',
+            [username, passwordHash, status]
         );
         if (result.rows.length > 0) {
-            const token = jwt.sign({ userId: result.rows[0].codper }, SECRET_KEY, { expiresIn: '1h' });
+            const token = jwt.sign({ id_usuario: result.rows[0].id_usuario }, SECRET_KEY, { expiresIn: '1h' });
             res.status(200).json({ message: 'Login successful', token});
         } else {
             res.status(401).json({ error: 'Invalid credentials' });
@@ -99,16 +100,16 @@ app.post('verify-token', async (req, res) => {
         if (!token) return res.json({ valid: false });
 
         const decoded = jwt.verify(token, SECRET_KEY);
-        const user = await pool.query('SELECT * FROM users WHERE codper = $q', [decoded.userId]);
+        const user = await pool.query('SELECT * FROM usuarios WHERE id_usuario = $1', [decoded.id_usuario]);
 
         if (user.length === 0) return res.json({ valid: false });
 
         res.json({
             valid: true,
             user: {
-                codper: user.rows[0].codper,
-                firstname: user.rows[0].firstname,
-                rol: user.rows[0].rol
+                id_usuario: user.rows[0].id_usuario,
+                nuser: user.rows[0].nuser,
+                rol: user.rows[0].rolid
             }
         })
     } catch (err) {
@@ -123,7 +124,7 @@ app.post('logout', async (req, res) => {
 // Ruta para consultar los usuarios
 app.get('/api/users', async (req, res) => {
     try {
-        const { rows } = await pool.query('SELECT id, firstname, secondname, ci, mail, phone, username FROM users');
+        const { rows } = await pool.query('SELECT id_usuario, nuser, rolid, fechacreacion FROM usuarios');
         res.json(rows);
     } catch (err) {
         console.error(err);

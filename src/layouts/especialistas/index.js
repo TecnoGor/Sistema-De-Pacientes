@@ -44,7 +44,7 @@ function Especialistas() {
   const [error, setError] = useState(null);
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
-  const API_Host = process.env.REACT_APP_API_HOST;
+  const API_Host = process.env.REACT_APP_API_URL;
 
   const fetchEspecialistas = async () => {
     try {

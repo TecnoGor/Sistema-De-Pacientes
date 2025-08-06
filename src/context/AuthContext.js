@@ -1,6 +1,5 @@
-
 import React, { createContext, useState, useEffect } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+// import AsyncStorage from "@react-native-async-storage/async-storage";
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -27,9 +26,9 @@ export const AuthProvider = ({ children }) => {
 
       if (response.data.valid && response.data.user) {
         setUser({
-          codper: response.data.user.codper,
-          username: response.data.user.username,
-          rol: response.data.user.rol,
+          id_usuario: response.data.user.id_usuario,
+          nuser: response.data.user.nuser,
+          rolid: response.data.user.rolid,
         });
       }
       return true;
@@ -37,9 +36,7 @@ export const AuthProvider = ({ children }) => {
       console.log("Error verificando el token: ", error);
       return false;
     }
-  }
-
-  
+  };
   // Función para iniciar sesión
   const login = async (token, userData) => {
     localStorage.setItem("authToken", token);
@@ -48,7 +45,7 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
     navigate("/dashboard");
   };
-  
+
   useEffect(() => {
     const checkAuth = async () => {
       const token = localStorage.getItem("authToken");
@@ -96,7 +93,7 @@ export const AuthProvider = ({ children }) => {
         user,
         loading,
         login,
-        logout 
+        logout,
       }}
     >
       {children}
