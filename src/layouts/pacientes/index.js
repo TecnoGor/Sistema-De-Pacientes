@@ -45,12 +45,13 @@ function Pacientes() {
   const [error, setError] = useState(null);
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
+  const API_Host = process.env.REACT_APP_API_HOST;
 
   const fetchPacientes = async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await axios.get("http://localhost:5002/api/pacientes");
+      const response = await axios.get(`${API_Host}/api/pacientes`);
       setPacientes(response.data);
     } catch (err) {
       console.log("Error al obtener pacientes", err);

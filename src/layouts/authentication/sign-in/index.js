@@ -44,12 +44,15 @@ import BasicLayout from "layouts/authentication/components/BasicLayout";
 import bgImage from "assets/images/bgHPVSS.jpg";
 
 function Basic() {
+  const { login } = useContext(AuthContext);
   const [rememberMe, setRememberMe] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const from = location.state?.from?.pathname || "/dashboard";
+  const API_Host = process.env.REACT_APP_API_URL;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -59,7 +62,7 @@ function Basic() {
     try {
       // Llamada a tu API de login
       const response = await axios.post(
-        "http://localhost:5000/login",
+        `${API_Host}/login`,
         {
           username,
           password,
@@ -71,9 +74,7 @@ function Basic() {
 
       if (response.data.token) {
         // Guardar el token en localStorage o en el estado global
-        localStorage.setItem("authToken", response.data.token);
-        // Redireccionar al dashboard o página principal
-        navigate("/dashboard");
+        login(response.data.token, response.data.user);
       } else {
         setError("Credenciales inválidas o error en el servidor");
       }

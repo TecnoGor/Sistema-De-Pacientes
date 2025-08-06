@@ -43,12 +43,13 @@ function Consultas() {
   const [error, setError] = useState(null);
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
+  const API_Host = process.env.REACT_APP_API_HOST;
 
   const fetchConsultas = async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await axios.get("http://localhost:5002/api/especialistas");
+      const response = await axios.get(`${API_Host}/api/especialistas`);
       setConsultas(response.data);
     } catch (err) {
       console.log("Error al obtener Consultas", err);

@@ -44,12 +44,13 @@ function Especialistas() {
   const [error, setError] = useState(null);
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
+  const API_Host = process.env.REACT_APP_API_HOST;
 
   const fetchEspecialistas = async () => {
     try {
       setloadingEspecialistas(true);
       setError(null);
-      const response = await axios.get("http://localhost:5002/api/especialistas");
+      const response = await axios.get(`${API_Host}/api/especialistas`);
       setEspecialistas(response.data);
     } catch (err) {
       console.log("Error al obtener especialistas", err);
