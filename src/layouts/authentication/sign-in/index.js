@@ -13,7 +13,7 @@ Coded by www.creative-tim.com
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 */
 
-import { useState } from "react";
+import { useState, useContext } from "react";
 import axios from "axios";
 
 // react-router-dom components
@@ -80,7 +80,7 @@ function Basic() {
       }
     } catch (err) {
       // Manejo de errores específicos
-      console.error("Error completo en login:", err); // Para depuración
+      console.error("Error completo en login:", API_Host, err); // Para depuración
       if (err.code === "ECONNABORTED") {
         setError("El servidor no respondió a tiempo");
       } else if (err.response) {

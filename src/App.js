@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import PropTypes from "prop-types";
-import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import Icon from "@mui/material/Icon";
@@ -16,11 +16,10 @@ import { CacheProvider } from "@emotion/react";
 import createCache from "@emotion/cache";
 import routes from "routes";
 import { useMaterialUIController, setMiniSidenav, setOpenConfigurator } from "context";
-// import brandWhite from "assets/images/logo-ct.png";
 import sirhossLight from "assets/images/favicon.png";
-// import brandDark from "assets/images/logo-ct-dark.png";
-import Login from "layouts/authentication/sign-in"; // Asegúrate de que esta ruta es correcta
+import Login from "layouts/authentication/sign-in";
 import { ProtectedRoute } from "components/ProtectedRoutes";
+import { useAuth } from "context/AuthContext"; // Importa useAuth
 
 export default function App() {
   const [controller, dispatch] = useMaterialUIController();
@@ -37,15 +36,9 @@ export default function App() {
   const [onMouseEnter, setOnMouseEnter] = useState(false);
   const [rtlCache, setRtlCache] = useState(null);
   const { pathname } = useLocation();
-  const location = useLocation();
-  const navigate = useNavigate();
 
-  useEffect(() => {
-    const token = localStorage.getItem("authToken");
-    if (!token) {
-      navigate("/authentication/sign-in");
-    }
-  }, [navigate]);
+  // Usa el hook de autenticación
+  const { isAuthenticated, loading } = useAuth();
 
   // Cache for the rtl
   useMemo(() => {
@@ -133,24 +126,31 @@ export default function App() {
     </MDBox>
   );
 
+  // Mostrar loading mientras verifica autenticación
+  if (loading) {
+    return (
+      <MDBox display="flex" justifyContent="center" alignItems="center" height="100vh">
+        <div>Cargando...</div>
+      </MDBox>
+    );
+  }
+
   // Función para renderizar el contenido principal
   const renderContent = (themeToUse) => (
     <ThemeProvider theme={themeToUse}>
       <CssBaseline />
-      {layout === "dashboard" && (
+      {layout === "dashboard" && isAuthenticated && (
+        // Solo mostrar sidenav si está autenticado
         <>
           <Sidenav
             color={sidenavColor}
             brand={(transparentSidenav && !darkMode) || whiteSidenav ? sirhossLight : sirhossLight}
             brandName="Sistema de Pacientes"
-            routes={routes.filter(
-              (route) => !route.hideWhenUnauthenticated || localStorage.getItem("authToken")
-            )}
+            routes={routes.filter((route) => !route.hideWhenUnauthenticated || isAuthenticated)}
             onMouseEnter={handleOnMouseEnter}
             onMouseLeave={handleOnMouseLeave}
           />
           <Configurator />
-          {/* {configsButton} */}
         </>
       )}
       {layout === "vr" && <Configurator />}
@@ -160,14 +160,13 @@ export default function App() {
         <Route
           path="*"
           element={
-            localStorage.getItem("authToken") ? (
+            isAuthenticated ? (
               <Navigate to="/dashboard" replace />
             ) : (
               <Navigate to="/authentication/sign-in" replace />
             )
           }
         />
-        <Route path="*" element={<Navigate to="/dashboard" />} />
       </Routes>
     </ThemeProvider>
   );

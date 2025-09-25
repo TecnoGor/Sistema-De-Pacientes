@@ -1,7 +1,5 @@
-import React, { createContext, useState, useEffect } from "react";
-// import AsyncStorage from "@react-native-async-storage/async-storage";
+import React, { createContext, useState, useEffect, useContext } from "react";
 import { jwtDecode } from "jwt-decode";
-import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import PropTypes from "prop-types";
 
@@ -11,7 +9,6 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
 
   const verifyToken = async (token) => {
     try {
@@ -30,20 +27,22 @@ export const AuthProvider = ({ children }) => {
           nuser: response.data.user.nuser,
           rolid: response.data.user.rolid,
         });
+        setIsAuthenticated(true);
       }
-      return true;
+      return response.data.valid;
     } catch (error) {
       console.log("Error verificando el token: ", error);
       return false;
     }
   };
-  // Función para iniciar sesión
+
+  // Función para iniciar sesión (sin navigate aquí)
   const login = async (token, userData) => {
     localStorage.setItem("authToken", token);
     setIsAuthenticated(true);
     setUser(userData);
     setLoading(false);
-    navigate("/dashboard");
+    // navigate se manejará en el componente que llama a login
   };
 
   useEffect(() => {
@@ -58,31 +57,39 @@ export const AuthProvider = ({ children }) => {
         const isValid = await verifyToken(token);
         if (!isValid) {
           localStorage.removeItem("authToken");
+          setIsAuthenticated(false);
+          setUser(null);
         }
       } catch (error) {
         console.log("Error al verificar token: ", error);
         localStorage.removeItem("authToken");
+        setIsAuthenticated(false);
+        setUser(null);
       } finally {
         setLoading(false);
       }
     };
     checkAuth();
   }, []);
-  // Función para cerrar sesión
+
+  // Función para cerrar sesión (sin navigate aquí)
   const logout = async () => {
     try {
-      await axios.post(`${process.env.REACT_APP_API_URL}/logout`, null, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-        },
-      });
+      const token = localStorage.getItem("authToken");
+      if (token) {
+        await axios.post(`${process.env.REACT_APP_API_URL}/logout`, null, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      }
     } catch (error) {
       console.error("Logout Error: ", error);
     } finally {
       localStorage.removeItem("authToken");
       setIsAuthenticated(false);
       setUser(null);
-      navigate("/authentication/sign-in");
+      // navigate se manejará en el componente que llama a logout
     }
   };
 
@@ -101,8 +108,13 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
+// Custom hook con verificación de seguridad
 export const useAuth = () => {
-  return useContext(AuthContext);
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth debe ser usado dentro de un AuthProvider");
+  }
+  return context;
 };
 
 AuthProvider.propTypes = {
