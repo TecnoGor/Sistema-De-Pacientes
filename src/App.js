@@ -1,9 +1,11 @@
 import { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import Icon from "@mui/material/Icon";
+import CircularProgress from "@mui/material/CircularProgress";
 import MDBox from "components/MDBox";
 import Sidenav from "examples/Sidenav";
 import Configurator from "examples/Configurator";
@@ -16,10 +18,13 @@ import { CacheProvider } from "@emotion/react";
 import createCache from "@emotion/cache";
 import routes from "routes";
 import { useMaterialUIController, setMiniSidenav, setOpenConfigurator } from "context";
-import sirhossLight from "assets/images/favicon.png";
-import Login from "layouts/authentication/sign-in";
+import brandWhite from "assets/images/logo-ct.png";
+import iposLight from "assets/images/favicon.png";
+import brandDark from "assets/images/logo-ct-dark.png";
+import Basic from "layouts/authentication/sign-in"; // Asegúrate de que esta ruta es correcta
 import { ProtectedRoute } from "components/ProtectedRoutes";
-import { useAuth } from "context/AuthContext"; // Importa useAuth
+import { Dashboard } from "@mui/icons-material";
+import "bootstrap/dist/css/bootstrap.min.css";
 
 export default function App() {
   const [controller, dispatch] = useMaterialUIController();
@@ -36,9 +41,20 @@ export default function App() {
   const [onMouseEnter, setOnMouseEnter] = useState(false);
   const [rtlCache, setRtlCache] = useState(null);
   const { pathname } = useLocation();
+  const location = useLocation();
+  const API_Host = process.env.REACT_APP_API_URL;
+  const navigate = useNavigate();
 
   // Usa el hook de autenticación
-  const { isAuthenticated, loading } = useAuth();
+  // const { isAuthenticated, loading } = useAuth();
+
+  useEffect(() => {
+    // Verificar autenticación al cargar el dashboard
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      navigate("/authentication/sign-in");
+    }
+  }, [navigate]);
 
   // Cache for the rtl
   useMemo(() => {
@@ -127,46 +143,49 @@ export default function App() {
   );
 
   // Mostrar loading mientras verifica autenticación
-  if (loading) {
-    return (
-      <MDBox display="flex" justifyContent="center" alignItems="center" height="100vh">
-        <div>Cargando...</div>
-      </MDBox>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <MDBox display="flex" justifyContent="center" alignItems="center" height="100vh">
+  //       <div>Cargando...</div>
+  //     </MDBox>
+  //   );
+  // }
 
   // Función para renderizar el contenido principal
   const renderContent = (themeToUse) => (
     <ThemeProvider theme={themeToUse}>
       <CssBaseline />
-      {layout === "dashboard" && isAuthenticated && (
-        // Solo mostrar sidenav si está autenticado
+      {layout === "dashboard" && (
         <>
           <Sidenav
             color={sidenavColor}
-            brand={(transparentSidenav && !darkMode) || whiteSidenav ? sirhossLight : sirhossLight}
-            brandName="Sistema de Pacientes"
-            routes={routes.filter((route) => !route.hideWhenUnauthenticated || isAuthenticated)}
+            brand={(transparentSidenav && !darkMode) || whiteSidenav ? iposLight : iposLight}
+            brandName="Sistema de Carnetización"
+            routes={routes.filter(
+              (route) => !route.hideWhenUnauthenticated || localStorage.getItem("authToken")
+            )}
             onMouseEnter={handleOnMouseEnter}
             onMouseLeave={handleOnMouseLeave}
           />
           <Configurator />
+          {/* {configsButton} */}
         </>
       )}
       {layout === "vr" && <Configurator />}
       <Routes>
         {getRoutes(routes)}
-        <Route path="/authentication/sign-in" element={<Login />} />
+        <Route path="/authentication/sign-in" element={<Basic />} />
         <Route
           path="*"
           element={
-            isAuthenticated ? (
+            localStorage.getItem("authToken") ? (
               <Navigate to="/dashboard" replace />
             ) : (
               <Navigate to="/authentication/sign-in" replace />
             )
           }
         />
+        <Route path="*" element={<Navigate to="/dashboard" />} />
       </Routes>
     </ThemeProvider>
   );

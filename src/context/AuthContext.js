@@ -1,7 +1,9 @@
-import React, { createContext, useState, useEffect, useContext } from "react";
+import React, { createContext, useState, useContext, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import axios from "axios";
 import PropTypes from "prop-types";
+// import { ApiOutlined } from "@mui/icons-material";
 
 export const AuthContext = createContext();
 
@@ -9,40 +11,64 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const API_Host = process.env.REACT_APP_API_URL;
+  const navigate = useNavigate();
 
   const verifyToken = async (token) => {
     try {
+      // 1. Verificar primero si el token está expirado localmente
       const decoded = jwtDecode(token);
-      if (decoded.exp * 1000 < Date.now()) {
+      if (decoded.exp * 10000 < Date.now()) {
         return false;
       }
 
-      const response = await axios.get(`http://localhost:5000/verify-token`, {
+      // 2. Luego verificar con el backend
+      const response = await axios.get(`${API_Host}/verify-token`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       if (response.data.valid && response.data.user) {
+        // Guardamos la información del usuario
         setUser({
-          id_usuario: response.data.user.id_usuario,
-          nuser: response.data.user.nuser,
-          rolid: response.data.user.rolid,
+          codper: response.data.user.codper,
+          firstname: response.data.user.firstname,
+          rol: response.data.user.rol,
         });
-        setIsAuthenticated(true);
+        return true;
       }
-      return response.data.valid;
+      return false;
     } catch (error) {
-      console.log("Error verificando el token: ", error);
+      console.error("Error verifying token:", error);
       return false;
     }
   };
 
-  // Función para iniciar sesión (sin navigate aquí)
+  // const login = async (credentials) => {
+  //   try {
+  //     const response = await axios.post("http://10.16.9.24:5001/login", credentials);
+  //     const { token } = response.data;
+  //     localStorage.setItem("authToken", token);
+  //     const isValid = await verifyToken(token);
+
+  //     if (!isValid) {
+  //       throw new Error("Token inválido después de login");
+  //     }
+
+  //     setIsAuthenticated(true);
+  //     return true;
+  //   } catch (error) {
+  //     console.error("Login error:", error);
+  //     localStorage.removeItem("authToken");
+  //     return false;
+  //   }
+  // };
+
   const login = async (token, userData) => {
     localStorage.setItem("authToken", token);
     setIsAuthenticated(true);
     setUser(userData);
     setLoading(false);
-    // navigate se manejará en el componente que llama a login
+    navigate("/dashboard");
   };
 
   useEffect(() => {
@@ -55,41 +81,36 @@ export const AuthProvider = ({ children }) => {
 
       try {
         const isValid = await verifyToken(token);
+        setIsAuthenticated(isValid);
+
         if (!isValid) {
           localStorage.removeItem("authToken");
-          setIsAuthenticated(false);
-          setUser(null);
         }
       } catch (error) {
-        console.log("Error al verificar token: ", error);
+        console.error("Auth check error:", error);
         localStorage.removeItem("authToken");
-        setIsAuthenticated(false);
-        setUser(null);
       } finally {
         setLoading(false);
       }
     };
+
     checkAuth();
   }, []);
 
-  // Función para cerrar sesión (sin navigate aquí)
   const logout = async () => {
     try {
-      const token = localStorage.getItem("authToken");
-      if (token) {
-        await axios.post(`${process.env.REACT_APP_API_URL}/logout`, null, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-      }
+      await axios.post(`${API_Host}/logout`, null, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+        },
+      });
     } catch (error) {
-      console.error("Logout Error: ", error);
+      console.error("Logout error:", error);
     } finally {
       localStorage.removeItem("authToken");
       setIsAuthenticated(false);
       setUser(null);
-      // navigate se manejará en el componente que llama a logout
+      navigate("/authentication/sign-in");
     }
   };
 
@@ -99,7 +120,7 @@ export const AuthProvider = ({ children }) => {
         isAuthenticated,
         user,
         loading,
-        login,
+        login, // Asegúrate de incluir login aquí
         logout,
       }}
     >
@@ -108,13 +129,9 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-// Custom hook con verificación de seguridad
+// Hook personalizado para usar el contexto más fácilmente
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth debe ser usado dentro de un AuthProvider");
-  }
-  return context;
+  return useContext(AuthContext);
 };
 
 AuthProvider.propTypes = {
