@@ -63,8 +63,8 @@ function RegPacientes({ hClose, show }) {
 
         if (responsePersona.status === 201) {
           Swal.fire({
-            title: "Paciente Registrado!",
-            text: "El paciente ha sido registrado con éxito",
+            title: "Datos personales Registrado!",
+            text: "La persona ha sido registrado con éxito",
             icon: "success",
             draggable: true,
           })
