@@ -89,8 +89,8 @@ app.get('/api/selectPersona/:ci', async (req, res) => {
         console.error('Error detallado:', {
             message: err.message,
             stack: err.stack,
-            query: 'SELECT codger, color FROM gerencia_color WHERE codger = $1',
-            parametro: codger
+            query: 'SELECT id_persona FROM persona WHERE ci = $1',
+            parametro: ci
         });
         res.status(500).json({ 
             error: 'Error al consultar la base de datos',
@@ -105,7 +105,7 @@ app.post('/api/regDatosPersonales', async (req, res) => {
 
     try {
         const result = await pool.query(
-            'INSERT INTO paciente (id_persona, correo, telefono, fechanac, edocivil, nivinst, profesion, direccion) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
+            'INSERT INTO datospersonales (id_persona, correo, telefono, fechanac, edocivil, nivinst, profesion, direccion) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
             [id_persona, mail, phone, bdate, scivil, studios, ocupation, direccionCompleta]
         );
         res.status(201).json(result.rows[0]);

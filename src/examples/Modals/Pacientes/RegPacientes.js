@@ -30,7 +30,7 @@ function RegPacientes({ hClose, show }) {
   const API_Host = process.env.REACT_APP_API_URL;
 
   const regPaciente = async () => {
-    return console.log(formDataPacientes);
+    console.log(formDataPacientes);
     try {
       const pacienteData = {
         personaId: formDataPacientes.personaId,
@@ -49,6 +49,7 @@ function RegPacientes({ hClose, show }) {
         parroquia: formDataPacientes.parroquia,
         dirhouse: formDataPacientes.dirhouse,
       };
+      // return console.log(pacienteData);
 
       const responsePersona = await axios.post(`${API_Host}/api/regPersona`, pacienteData, {
         headers: { "Content-Type": "application/json" },
@@ -57,9 +58,13 @@ function RegPacientes({ hClose, show }) {
       if (responsePersona.status === 201) {
         const consulPersona = await axios.get(`${API_Host}/api/selectPersona/${pacienteData.ci}`);
         setFormDataPacientes({ personaId: consulPersona.data.id_persona });
-        const responsePaciente = await axios.post(`${API_Host}/api/insertPaciente`, pacienteData, {
-          headers: { "Content-Type": "application/json" },
-        });
+        const responsePaciente = await axios.post(
+          `${API_Host}/api/regDatosPersonales`,
+          pacienteData,
+          {
+            headers: { "Content-Type": "application/json" },
+          }
+        );
 
         if (responsePersona.status === 201) {
           Swal.fire({
@@ -67,14 +72,20 @@ function RegPacientes({ hClose, show }) {
             text: "La persona ha sido registrado con éxito",
             icon: "success",
             draggable: true,
-          })
+          });
         }
+      } else {
+        Swal.fire({
+          title: "Error al registrar el paciente",
+          text: `Error: "Error al registrar el paciente"}`,
+          icon: "error",
+          draggable: true,
+        });
       }
-
-    } catch {
+    } catch (error) {
       Swal.fire({
         title: "Error al registrar el paciente",
-        text: `Error: ${error.response.data.message || "Error al registrar el paciente"}`,
+        text: `Error: "Error al registrar el paciente Catch"}`,
         icon: "error",
         draggable: true,
       });
