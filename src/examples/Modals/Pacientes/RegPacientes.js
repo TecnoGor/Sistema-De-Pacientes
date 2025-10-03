@@ -7,9 +7,12 @@ import PersonaForm from "examples/Cards/Forms/Persona";
 import DatosPersonales from "examples/Cards/Forms/DatosPersonales";
 import axios from "axios";
 import Swal from "sweetalert2";
+import { CircularProgress } from "@mui/material";
 
 function RegPacientes({ hClose, show }) {
   const [currentStep, setCurrentStep] = useState(1);
+  const [personaExist, setPersonaExist] = useState(false);
+  const [cargando, setCargando] = useState(false);
   const [formDataPacientes, setFormDataPacientes] = useState({
     personaId: "",
     typeCi: "",
@@ -30,7 +33,7 @@ function RegPacientes({ hClose, show }) {
   const API_Host = process.env.REACT_APP_API_URL;
 
   const regPaciente = async () => {
-    console.log(formDataPacientes);
+    // console.log(formDataPacientes);
     try {
       const pacienteData = {
         personaId: formDataPacientes.personaId,
@@ -49,15 +52,9 @@ function RegPacientes({ hClose, show }) {
         parroquia: formDataPacientes.parroquia,
         dirhouse: formDataPacientes.dirhouse,
       };
-      // return console.log(pacienteData);
+      console.log(pacienteData);
 
-      const responsePersona = await axios.post(`${API_Host}/api/regPersona`, pacienteData, {
-        headers: { "Content-Type": "application/json" },
-      });
-
-      if (responsePersona.status === 201) {
-        const consulPersona = await axios.get(`${API_Host}/api/selectPersona/${pacienteData.ci}`);
-        setFormDataPacientes({ personaId: consulPersona.data.id_persona });
+      if (personaExist) {
         const responsePaciente = await axios.post(
           `${API_Host}/api/regDatosPersonales`,
           pacienteData,
@@ -66,7 +63,7 @@ function RegPacientes({ hClose, show }) {
           }
         );
 
-        if (responsePersona.status === 201) {
+        if (responsePaciente.status === 201) {
           Swal.fire({
             title: "Datos personales Registrado!",
             text: "La persona ha sido registrado con éxito",
@@ -75,17 +72,51 @@ function RegPacientes({ hClose, show }) {
           });
         }
       } else {
-        Swal.fire({
-          title: "Error al registrar el paciente",
-          text: `Error: "Error al registrar el paciente"}`,
-          icon: "error",
-          draggable: true,
+        const responsePersona = await axios.post(`${API_Host}/api/regPersona`, pacienteData, {
+          headers: { "Content-Type": "application/json" },
         });
+
+        if (responsePersona.status === 201) {
+          const consulPersona = await axios.get(`${API_Host}/api/selectPersona/${pacienteData.ci}`);
+          // pacienteData({ personaId: consulPersona.data.id_persona });
+          pacienteData.personaId = consulPersona.data.id_persona;
+          const responsePaciente = await axios.post(
+            `${API_Host}/api/regDatosPersonales`,
+            pacienteData,
+            {
+              headers: { "Content-Type": "application/json" },
+            }
+          );
+
+          if (responsePaciente.status === 201) {
+            Swal.fire({
+              title: "Datos personales Registrado!",
+              text: "La persona ha sido registrado con éxito",
+              icon: "success",
+              draggable: true,
+            });
+          }
+        }
       }
     } catch (error) {
+      let errorMessage = "Error al registrar el paciente";
+
+      if (error.response && error.response.data) {
+        // Si la API devuelve un objeto de error con la cédula
+        if (error.response.data.error) {
+          errorMessage = `Error: ${error.response.data.error}`;
+        } else if (error.response.data.message) {
+          errorMessage = error.response.data.message;
+        } else {
+          errorMessage = JSON.stringify(error.response.data);
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
       Swal.fire({
         title: "Error al registrar el paciente",
-        text: `Error: "Error al registrar el paciente Catch"}`,
+        text: errorMessage,
         icon: "error",
         draggable: true,
       });
@@ -98,9 +129,57 @@ function RegPacientes({ hClose, show }) {
       ...prev,
       [name]: value,
     }));
+    if (name === "ci" && value.length >= 6) {
+      console.log(value);
+      consultaPersona(value);
+    }
   };
 
-  const handleNext = () => {
+  const consultaPersona = async (cedula) => {
+    console.log("rosita");
+    if (cedula.length >= 6) {
+      setCargando(true);
+      try {
+        const response = await axios.get(`${API_Host}/api/selectPersona/${cedula}`);
+
+        if (response.data && response.data.id_persona) {
+          setPersonaExist(true);
+          formDataPacientes.personaId = response.data.id_persona;
+          console.log(formDataPacientes.personaId);
+          if (response.data.nombres) {
+            setFormDataPacientes((prev) => ({
+              ...prev,
+              firstname: response.data.nombres,
+              lastname: response.data.apellidos,
+              typeCi: response.data.tipoci,
+            }));
+          }
+          Swal.fire({
+            title: "Persona encontrada!",
+            text: "La persona ha sido registrado con anterioridad, debe registrar datos personales.",
+            icon: "success",
+            draggable: true,
+          });
+        } else {
+          setPersonaExist(false);
+        }
+      } catch (error) {
+        Swal.fire({
+          title: "Error al consultar la persona",
+          text: error,
+          icon: "error",
+          draggable: true,
+        });
+        setPersonaExist(false);
+      } finally {
+        setCargando(false);
+      }
+    } else {
+      setPersonaExist(false);
+    }
+  };
+
+  const handleNextDP = async () => {
     setCurrentStep(currentStep + 1);
   };
 
@@ -134,8 +213,14 @@ function RegPacientes({ hClose, show }) {
         )}
         {currentStep < 2 ? (
           <>
-            <Button variant="primary" onClick={handleNext}>
-              Siguiente
+            <Button variant="primary" onClick={handleNextDP}>
+              {cargando && <CircularProgress />}
+              {personaExist && !cargando && (
+                <span style={{ color: "white" }}>✓ Persona encontrada</span>
+              )}
+              {!personaExist && formDataPacientes.ci.length >= 6 && !cargando && (
+                <span style={{ color: "white" }}>Siguiente</span>
+              )}
             </Button>
             <Button variant="secondary" onClick={hClose}>
               Cerrar

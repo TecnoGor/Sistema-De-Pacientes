@@ -63,7 +63,7 @@ app.post('/api/regPersona', async (req, res) => {
 
     try {
         const result = await pool.query(
-            'INSERT INTO persona (cedula, nombres, apellidos, tipoci) VALUES ($1, $2, $3) RETURNING *',
+            'INSERT INTO persona (cedula, nombres, apellidos, tipoci) VALUES ($1, $2, $3, $4) RETURNING *',
             [ci, firstname, lastname, typeCi]
         );
         res.status(201).json(result.rows[0]);
@@ -77,7 +77,7 @@ app.get('/api/selectPersona/:ci', async (req, res) => {
 
     try {
         const result = await pool.query(
-            'SELECT id_persona FROM persona WHERE ci = $1',
+            'SELECT id_persona, nombres, apellidos, tipoci FROM persona WHERE cedula = $1',
             [ci]
         );
         if (result.rows.length > 0) {
@@ -100,13 +100,13 @@ app.get('/api/selectPersona/:ci', async (req, res) => {
 });
 
 app.post('/api/regDatosPersonales', async (req, res) => {
-    const { id_persona, mail, phone, bdate, scivil, studios, ocupation, state, municipio, parroquia, dirhouse } = req.body;
+    const { personaId, mail, phone, bdate, scivil, studios, ocupation, state, municipio, parroquia, dirhouse } = req.body;
     const direccionCompleta = state + " " + municipio + " " + parroquia + " " + dirhouse;
 
     try {
         const result = await pool.query(
-            'INSERT INTO datospersonales (id_persona, correo, telefono, fechanac, edocivil, nivinst, profesion, direccion) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
-            [id_persona, mail, phone, bdate, scivil, studios, ocupation, direccionCompleta]
+            'INSERT INTO datospersonales (personaid, correo, telefono, fechanac, edocivil, nivinst, profesion, direccion) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
+            [personaId, mail, phone, bdate, scivil, studios, ocupation, direccionCompleta]
         );
         res.status(201).json(result.rows[0]);
     } catch (err) {
