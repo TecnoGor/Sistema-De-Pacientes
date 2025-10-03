@@ -85,7 +85,7 @@ app.get('/api/selectPersona/:ci', async (req, res) => {
         } else {
             res.json({});
         }
-    } catch {
+    } catch (err) {
         console.error('Error detallado:', {
             message: err.message,
             stack: err.stack,

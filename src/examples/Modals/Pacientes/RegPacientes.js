@@ -89,6 +89,23 @@ function RegPacientes({ hClose, show }) {
           );
 
           if (responsePaciente.status === 201) {
+            setFormDataPacientes({
+              personaId: "",
+              typeCi: "",
+              ci: "",
+              firstname: "",
+              lastname: "",
+              mail: "",
+              phone: "",
+              bdate: "",
+              scivil: "",
+              studios: "",
+              ocupation: "",
+              state: "",
+              municipio: "",
+              parroquia: "",
+              dirhouse: "",
+            });
             Swal.fire({
               title: "Datos personales Registrado!",
               text: "La persona ha sido registrado con éxito",
