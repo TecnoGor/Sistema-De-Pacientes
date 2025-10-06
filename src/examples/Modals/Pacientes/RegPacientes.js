@@ -87,7 +87,7 @@ function RegPacientes({ hClose, show }) {
               headers: { "Content-Type": "application/json" },
             }
           );
-
+          // Cambios Isotericos
           if (responsePaciente.status === 201) {
             setFormDataPacientes({
               personaId: "",
