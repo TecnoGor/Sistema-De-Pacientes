@@ -101,7 +101,7 @@ app.get('/api/selectPersona/:ci', async (req, res) => {
 
 app.post('/api/regDatosPersonales', async (req, res) => {
     const { personaId, mail, phone, bdate, scivil, studios, ocupation, state, municipio, parroquia, dirhouse } = req.body;
-    const direccionCompleta = state + " " + municipio + " " + parroquia + " " + dirhouse;
+    const direccionCompleta = state + ", Municipio " + municipio + ", Parroquia " + parroquia + ", " + dirhouse;
 
     try {
         const result = await pool.query(

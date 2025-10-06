@@ -106,12 +106,14 @@ function RegPacientes({ hClose, show }) {
               parroquia: "",
               dirhouse: "",
             });
+            setCurrentStep(1);
             Swal.fire({
               title: "Datos personales Registrado!",
               text: "La persona ha sido registrado con éxito",
               icon: "success",
               draggable: true,
             });
+            hClose;
           }
         }
       }
