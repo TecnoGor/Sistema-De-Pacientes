@@ -5,6 +5,7 @@ import Button from "react-bootstrap/Button";
 import Modal from "react-bootstrap/Modal";
 import PersonaForm from "examples/Cards/Forms/Persona";
 import DatosPersonales from "examples/Cards/Forms/DatosPersonales";
+import PacienteForm from "examples/Cards/Forms/Paciente";
 import axios from "axios";
 import Swal from "sweetalert2";
 import { CircularProgress } from "@mui/material";
@@ -29,6 +30,9 @@ function RegPacientes({ hClose, show }) {
     municipio: "",
     parroquia: "",
     dirhouse: "",
+    typePaciente: "",
+    referencia: "",
+    carnetM: "",
   });
   const API_Host = process.env.REACT_APP_API_URL;
 
