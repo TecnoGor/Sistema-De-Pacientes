@@ -110,14 +110,13 @@ function RegPacientes({ hClose, show }) {
               parroquia: "",
               dirhouse: "",
             });
-            setCurrentStep(1);
+            setCurrentStep(3);
             Swal.fire({
               title: "Datos personales Registrado!",
               text: "La persona ha sido registrado con éxito",
               icon: "success",
               draggable: true,
             });
-            hClose;
           }
         }
       }
@@ -206,6 +205,10 @@ function RegPacientes({ hClose, show }) {
     setCurrentStep(currentStep + 1);
   };
 
+  const handleNextP = async () => {
+    setCurrentStep(3);
+  };
+
   const handleBack = () => {
     setCurrentStep(currentStep - 1);
   };
@@ -222,12 +225,15 @@ function RegPacientes({ hClose, show }) {
         {currentStep === 2 && (
           <DatosPersonales formDataPersonales={formDataPacientes} handleChange={handleChange} />
         )}
+        {currentStep === 3 && (
+          <PacienteForm formDataPaciente={formDataPacientes} handleChange={handleChange} />
+        )}
       </Modal.Body>
       <Modal.Footer>
-        {currentStep > 1 && (
+        {currentStep === 1 && (
           <>
             <Button variant="primary" onClick={regPaciente}>
-              Registrar Paciente
+              Registrar Datos Personales
             </Button>
             <Button variant="secondary" onClick={handleBack}>
               Atras
@@ -236,17 +242,33 @@ function RegPacientes({ hClose, show }) {
         )}
         {currentStep < 2 ? (
           <>
-            <Button variant="primary" onClick={handleNextDP}>
-              {cargando && <CircularProgress />}
-              {personaExist && !cargando && (
+            {cargando && <CircularProgress />}
+            {personaExist && !cargando && (
+              <Button variant="primary" onClick={handleNextP}>
                 <span style={{ color: "white" }}>✓ Persona encontrada</span>
-              )}
-              {!personaExist && formDataPacientes.ci.length >= 6 && !cargando && (
+              </Button>
+            )}
+            {!personaExist && formDataPacientes.ci.length >= 6 && !cargando && (
+              <Button variant="primary" onClick={handleNextDP}>
                 <span style={{ color: "white" }}>Siguiente</span>
-              )}
-            </Button>
+              </Button>
+            )}
             <Button variant="secondary" onClick={hClose}>
               Cerrar
+            </Button>
+          </>
+        ) : (
+          <Button variant="secondary" onClick={hClose}>
+            Cerrar
+          </Button>
+        )}
+        {currentStep === 3 ? (
+          <>
+            <Button variant="primary" onClick={regPaciente}>
+              Registrar Paciente
+            </Button>
+            <Button variant="secondary" onClick={handleBack}>
+              Atras
             </Button>
           </>
         ) : (

@@ -6,7 +6,7 @@ import Container from "react-bootstrap/Container";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 
-function PacienteForm({ formDataPersona, handleChange }) {
+function PacienteForm({ formDataPaciente, handleChange }) {
   return (
     <Form>
       <Row>
@@ -15,7 +15,7 @@ function PacienteForm({ formDataPersona, handleChange }) {
             <Form.Label>Tipo de Paciente</Form.Label>
             <Form.Select
               aria-label="Default example"
-              value={formDataPersona.typePaciente || ""}
+              value={formDataPaciente.typePaciente || ""}
               name="typePaciente"
               onChange={handleChange}
             >
@@ -32,20 +32,20 @@ function PacienteForm({ formDataPersona, handleChange }) {
             <Form.Control
               type="text"
               placeholder="Referencia Medica"
-              value={formDataPersona.referencia || ""}
+              value={formDataPaciente.referencia || ""}
               name="referencia"
               onChange={handleChange}
             />
           </Form.Group>
         </Col>
         <Col>
-          {formDataPersona.typePaciente === "Militar" && (
+          {formDataPaciente.typePaciente === "Militar" && (
             <Form.Group className="mb-3" controlId="carnetM.ControlInput2">
               <Form.Label>N° Carnet Militar</Form.Label>
               <Form.Control
                 type="text"
                 placeholder="Carnet Militar"
-                value={formDataPersona.carnetM || ""}
+                value={formDataPaciente.carnetM || ""}
                 name="carnetM"
                 onChange={handleChange}
               />
@@ -58,7 +58,7 @@ function PacienteForm({ formDataPersona, handleChange }) {
 }
 
 PacienteForm.propTypes = {
-  formDataPersona: PropTypes.object.isRequired,
+  formDataPaciente: PropTypes.object.isRequired,
   handleChange: PropTypes.func.isRequired,
 };
 
