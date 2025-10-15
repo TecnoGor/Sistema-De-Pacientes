@@ -105,10 +105,33 @@ app.post('/api/regDatosPersonales', async (req, res) => {
 
     try {
         const result = await pool.query(
-            'INSERT INTO datospersonales (personaid, correo, telefono, fechanac, edocivil, nivinst, profesion, direccion) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
+            'INSERT INTO datospersonales (personaid, correo, telefono, fechanac, edocivil, nivinst, profesion, direccion) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id_dpersonales',
             [personaId, mail, phone, bdate, scivil, studios, ocupation, direccionCompleta]
         );
-        res.status(201).json(result.rows[0]);
+
+        const id_dpersonales = result.rows[0].id_dpersonales;
+
+        res.status(201).json({
+            success: true,
+            message: 'Datos Personales registrados exitosamente',
+            dpersonalesid: id_dpersonales,
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            error: err.message,
+        });
+    }
+});
+
+app.post('/api/regPacientes', async (req, res) => {
+    const { dpersonalesid, referencia, exception, representanteid, typePaciente, carnetA, carnetM, gradoM, componenteM } = req.body;
+
+    try {
+        const result = await pool.query(
+            'INSERT INTO paciente (dpersonalesid, referencia, excepcion, representanteid, tipopaciente, carnetafiliado, carnetmilitar, gradoM, componenteM) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
+            [dpersonalesid, referencia, exception, representanteid, typePaciente, carnetA, carnetM, gradoM, componenteM]
+        );
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
