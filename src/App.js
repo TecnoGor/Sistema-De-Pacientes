@@ -22,6 +22,7 @@ import brandWhite from "assets/images/logo-ct.png";
 import iposLight from "assets/images/favicon.png";
 import brandDark from "assets/images/logo-ct-dark.png";
 import Basic from "layouts/authentication/sign-in"; // Asegúrate de que esta ruta es correcta
+import Cover from "layouts/authentication/sign-up";
 import { ProtectedRoute } from "components/ProtectedRoutes";
 import { Dashboard } from "@mui/icons-material";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -41,7 +42,6 @@ export default function App() {
   const [onMouseEnter, setOnMouseEnter] = useState(false);
   const [rtlCache, setRtlCache] = useState(null);
   const { pathname } = useLocation();
-  const location = useLocation();
   const API_Host = process.env.REACT_APP_API_URL;
   const navigate = useNavigate();
 
@@ -51,10 +51,14 @@ export default function App() {
   useEffect(() => {
     // Verificar autenticación al cargar el dashboard
     const token = localStorage.getItem("authToken");
-    if (!token) {
+    if (
+      !token &&
+      pathname !== "/authentication/sign-in" &&
+      pathname !== "/authentication/sign-up"
+    ) {
       navigate("/authentication/sign-in");
     }
-  }, [navigate]);
+  }, [navigate, pathname]);
 
   // Cache for the rtl
   useMemo(() => {
@@ -160,7 +164,7 @@ export default function App() {
           <Sidenav
             color={sidenavColor}
             brand={(transparentSidenav && !darkMode) || whiteSidenav ? iposLight : iposLight}
-            brandName="Sistema de Carnetización"
+            brandName="Sistema de Camaras Hiperbaricas"
             routes={routes.filter(
               (route) => !route.hideWhenUnauthenticated || localStorage.getItem("authToken")
             )}
@@ -175,6 +179,7 @@ export default function App() {
       <Routes>
         {getRoutes(routes)}
         <Route path="/authentication/sign-in" element={<Basic />} />
+        <Route path="/authentication/sign-up" element={<Cover />} />
         <Route
           path="*"
           element={

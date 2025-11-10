@@ -10,7 +10,7 @@ import axios from "axios";
 import Swal from "sweetalert2";
 import { CircularProgress } from "@mui/material";
 
-function RegPacientes({ hClose, show }) {
+function RegPacientes({ hClose, show, fetch }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [exceptionActive, setExceptionActive] = useState(false);
   const [personaExist, setPersonaExist] = useState(false);
@@ -47,105 +47,146 @@ function RegPacientes({ hClose, show }) {
   const regPaciente = async () => {
     // console.log(formDataPacientes);
     try {
-      const pacienteData = {
-        personaId: formDataPacientes.personaId,
-        dpersonalesId: formDataPacientes.dpersonalesId,
-        typeCi: formDataPacientes.typeCi,
-        ci: formDataPacientes.ci,
-        firstname: formDataPacientes.firstname,
-        lastname: formDataPacientes.lastname,
-        mail: formDataPacientes.mail,
-        phone: formDataPacientes.phone,
-        bdate: formDataPacientes.bdate,
-        scivil: formDataPacientes.scivil,
-        studios: formDataPacientes.studios,
-        ocupation: formDataPacientes.ocupation,
-        state: formDataPacientes.state,
-        municipio: formDataPacientes.municipio,
-        parroquia: formDataPacientes.parroquia,
-        dirhouse: formDataPacientes.dirhouse,
-        typePaciente: formDataPacientes.typePaciente,
-        referencia: formDataPacientes.referencia,
-        carnetM: formDataPacientes.carnetM,
-        gradoM: formDataPacientes.gradoM,
-        componentM: formDataPacientes.componentM,
-        carnetA: formDataPacientes.carnetA,
-        exception: formDataPacientes.exception,
-        exceptionD: formDataPacientes.exceptionD,
-      };
-      console.log(pacienteData);
+      const formData = new FormData();
 
-      if (personaExist) {
-        const responseDatosPersonales = await axios.post(
-          `${API_Host}/api/regDatosPersonales`,
-          pacienteData,
-          {
-            headers: { "Content-Type": "application/json" },
+      Object.keys(formDataPacientes).forEach((key) => {
+        if (key !== "referencia" && key !== "dpersonalesId") {
+          if (formDataPacientes[key] !== null && formDataPacientes[key] !== undefined) {
+            formData.append(key, formDataPacientes[key]);
           }
-        );
-
-        if (responseDatosPersonales.status === 201) {
-          pacienteData.dpersonalesId = responseDatosPersonales.data.dpersonalesid;
-          Swal.fire({
-            title: "Datos personales Registrado!",
-            text: "La persona ha sido registrado con éxito",
-            icon: "success",
-            draggable: true,
-          });
         }
-      } else {
-        const responsePersona = await axios.post(`${API_Host}/api/regPersona`, pacienteData, {
-          headers: { "Content-Type": "application/json" },
-        });
+      });
 
-        if (responsePersona.status === 201) {
-          const consulPersona = await axios.get(`${API_Host}/api/selectPersona/${pacienteData.ci}`);
-          // pacienteData({ personaId: consulPersona.data.id_persona });
-          pacienteData.personaId = consulPersona.data.id_persona;
+      if (archivo) {
+        formData.append("referencia", archivo);
+      } else if (exceptionActive) {
+        formData.append("referencia", "excepcion");
+      } else {
+        formData.append("referencia", "");
+      }
+
+      formData.append("excepcion", exceptionActive);
+
+      // console.log("Datos a enviar:");
+      // for (let [key, value] of formData.entries()) {
+      //   console.log(key + ": " + value);
+      // }
+      if (personaExist) {
+        const personHaveDP =
+          formDataPacientes.dpersonalesId &&
+          formDataPacientes.dpersonalesId !== "null" &&
+          formDataPacientes.dpersonalesId > 0;
+        if (personHaveDP) {
+          // Ya tiene datos personales registrados, sigue con el registro de paciente.
+          formData.append("dpersonalesId", parseInt(formDataPacientes.dpersonalesId));
+          await regPacienteCompleto(formData);
+        } else {
+          // No tiene datos personales Registrados, por lo que se procede con el registro de DP
           const responseDatosPersonales = await axios.post(
             `${API_Host}/api/regDatosPersonales`,
-            pacienteData,
+            formData,
             {
               headers: { "Content-Type": "application/json" },
             }
           );
+
+          if (responseDatosPersonales.status === 201) {
+            // Se toma la respuesta del registro de los DP y se procede a crear un nuevo form data para obtener el id?dpersonales
+            // console.log(responseDatosPersonales.data.dpersonalesid);
+            const newDPId = responseDatosPersonales.data.dpersonalesid;
+            if (newDPId) {
+              const formDataActualizado = new FormData();
+              for (let [key, value] of formData.entries()) {
+                if (key !== "dpersonalesId") {
+                  formDataActualizado.append(key, value);
+                }
+              }
+
+              formDataActualizado.append("dpersonalesId", newDPId);
+
+              await regPacienteCompleto(formDataActualizado);
+            }
+          }
+        }
+      } else {
+        const responsePersona = await axios.post(`${API_Host}/api/regPersona`, formData, {
+          headers: { "Content-Type": "application/json" },
+        });
+
+        if (responsePersona.status === 201) {
+          const consulPersona = await axios.get(
+            `${API_Host}/api/selectPersona/${formDataPacientes.ci}`
+          );
+          // pacienteData({ personaId: consulPersona.data.id_persona });
+          // formData.append("personaId", consulPersona.data.id_persona);
+          const formDataDatosPersonales = new FormData();
+
+          for (let [key, value] of formData.entries()) {
+            formDataDatosPersonales.append(key, value);
+          }
+
+          formDataDatosPersonales.append("personaId", consulPersona.data.id_persona);
+
+          const responseDatosPersonales = await axios.post(
+            `${API_Host}/api/regDatosPersonales`,
+            formDataDatosPersonales,
+            {
+              headers: { "Content-Type": "application/json" },
+            }
+          );
+          // setFormDataPacientes({ dpersonalesId: responseDatosPersonales.dpersonalesid });
+          // formData.append("dpersonalesId", responseDatosPersonales.data.dpersonalesid);
+          // console.log("Que: ", responseDatosPersonales.data.dpersonalesid);
           // Cambios Isotericos
           if (responseDatosPersonales.status === 201) {
-            pacienteData.dpersonalesId = responseDatosPersonales.data.dpersonalesid;
-            const responsePaciente = await axios.post(
-              `${API_Host}/api/regDatosPersonales`,
-              pacienteData,
-              {
-                headers: { "Content-Type": "application/json" },
+            const newDPId = responseDatosPersonales.data.dpersonalesid;
+            const formDataPacienteCompleto = new FormData();
+
+            for (let [key, value] of formData.entries()) {
+              if (key !== "dpersonalesId") {
+                formDataPacienteCompleto.append(key, value);
               }
-            );
-            if (responsePaciente.status === 201) {
-              setFormDataPacientes({
-                personaId: "",
-                typeCi: "",
-                ci: "",
-                firstname: "",
-                lastname: "",
-                mail: "",
-                phone: "",
-                bdate: "",
-                scivil: "",
-                studios: "",
-                ocupation: "",
-                state: "",
-                municipio: "",
-                parroquia: "",
-                dirhouse: "",
-              });
-              Swal.fire({
-                title: "Datos personales Registrado!",
-                text: "La persona ha sido registrado con éxito",
-                icon: "success",
-                draggable: true,
-              });
-              setCurrentStep(3);
             }
-            //setCurrentStep(3);
+
+            formDataPacienteCompleto.append("personaId", consulPersona.data.id_persona);
+            formDataPacienteCompleto.append("dpersonalesId", parseInt(newDPId));
+
+            await regPacienteCompleto(formDataPacienteCompleto);
+            // formData.dpersonalesId = responseDatosPersonales.data.dpersonalesid;
+            // const responsePaciente = await axios.post(
+            //   `${API_Host}/api/regDatosPersonales`,
+            //   formData,
+            //   {
+            //     headers: { "Content-Type": "application/json" },
+            //   }
+            // );
+            // if (responsePaciente.status === 201) {
+            //   setFormDataPacientes({
+            //     personaId: "",
+            //     typeCi: "",
+            //     ci: "",
+            //     firstname: "",
+            //     lastname: "",
+            //     mail: "",
+            //     phone: "",
+            //     bdate: "",
+            //     scivil: "",
+            //     studios: "",
+            //     ocupation: "",
+            //     state: "",
+            //     municipio: "",
+            //     parroquia: "",
+            //     dirhouse: "",
+            //   });
+            //   Swal.fire({
+            //     title: "Datos personales Registrado!",
+            //     text: "La persona ha sido registrado con éxito",
+            //     icon: "success",
+            //     draggable: true,
+            //   });
+            //   setCurrentStep(3);
+            // }
+            // //setCurrentStep(3);
           }
         }
       }
@@ -174,6 +215,59 @@ function RegPacientes({ hClose, show }) {
     }
   };
 
+  const regPacienteCompleto = async (a) => {
+    // console.log("A:", a);
+    try {
+      const responsePaciente = await axios.post(`${API_Host}/api/regPacientes`, a, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      if (responsePaciente.status === 201) {
+        setFormDataPacientes({
+          personaId: "",
+          dpersonalesId: "",
+          typeCi: "",
+          ci: "",
+          firstname: "",
+          lastname: "",
+          mail: "",
+          phone: "",
+          bdate: "",
+          scivil: "",
+          studios: "",
+          ocupation: "",
+          state: "",
+          municipio: "",
+          parroquia: "",
+          dirhouse: "",
+          typePaciente: "",
+          referencia: null,
+          carnetM: "",
+          gradoM: "",
+          componentM: "",
+          carnetA: "",
+          exception: false,
+          exceptionD: "",
+        });
+        setArchivo(null);
+        setExceptionActive(false);
+        setCurrentStep(1);
+
+        Swal.fire({
+          title: "!Paciente Registrado!",
+          text: "El paciente ha sido registrado con exito",
+          icon: "success",
+          draggable: true,
+        }).then(() => {
+          hClose();
+          fetch();
+        });
+      }
+    } catch (error) {
+      throw error;
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormDataPacientes((prev) => ({
@@ -181,7 +275,7 @@ function RegPacientes({ hClose, show }) {
       [name]: value,
     }));
     if (name === "ci" && value.length >= 6) {
-      console.log(value);
+      // console.log(value);
       consultaPersona(value);
     }
     if (name === "exceptionCheck") {
@@ -199,14 +293,12 @@ function RegPacientes({ hClose, show }) {
         e.target.value = "";
         return;
       }
-
       // Validar tamaño (ejemplo: 5MB máximo)
       if (file.size > 5 * 1024 * 1024) {
         alert("El archivo es demasiado grande. Máximo 5MB.");
         e.target.value = "";
         return;
       }
-
       setArchivo(file);
     }
   };
@@ -220,22 +312,32 @@ function RegPacientes({ hClose, show }) {
 
         if (response.data && response.data.id_persona) {
           setPersonaExist(true);
-          formDataPacientes.personaId = response.data.id_persona;
-          console.log(formDataPacientes.personaId);
-          if (response.data.nombres) {
-            setFormDataPacientes((prev) => ({
-              ...prev,
-              firstname: response.data.nombres,
-              lastname: response.data.apellidos,
-              typeCi: response.data.tipoci,
-            }));
+          const dpId =
+            response.data.id_dpersonales === null ? parseInt(response.data.id_dpersonales) : null;
+          setFormDataPacientes((prev) => ({
+            ...prev,
+            personaId: response.data.id_persona,
+            dpersonalesId: dpId,
+            firstname: response.data.nombres,
+            lastname: response.data.apellidos,
+            typeCi: response.data.tipoci,
+            ci: response.data.cedula,
+          }));
+          if (dpId) {
+            Swal.fire({
+              title: "Persona encontrada!",
+              text: "La persona ha sido registrado con anterioridad.",
+              icon: "success",
+              draggable: true,
+            });
+          } else {
+            Swal.fire({
+              title: "Persona encontrada!",
+              text: "La persona ha sido registrado con anterioridad. Debe registrar los datos Personales",
+              icon: "success",
+              draggable: true,
+            });
           }
-          Swal.fire({
-            title: "Persona encontrada!",
-            text: "La persona ha sido registrado con anterioridad, debe registrar datos personales.",
-            icon: "success",
-            draggable: true,
-          });
         } else {
           setPersonaExist(false);
         }
@@ -288,6 +390,7 @@ function RegPacientes({ hClose, show }) {
             formDataPaciente={formDataPacientes}
             handleChange={handleChange}
             exception={exceptionActive}
+            handleFileChange={handleFileChange}
           />
         )}
       </Modal.Body>
@@ -305,11 +408,21 @@ function RegPacientes({ hClose, show }) {
         {currentStep === 1 ? (
           <>
             {cargando && <CircularProgress />}
-            {personaExist && !cargando && (
-              <Button variant="primary" onClick={handleNextP}>
-                <span style={{ color: "white" }}>✓ Persona encontrada</span>
-              </Button>
-            )}
+            {personaExist &&
+              !cargando &&
+              formDataPacientes.dpersonalesId &&
+              formDataPacientes.dpersonalesId > 0 && (
+                <Button variant="primary" onClick={handleNextP}>
+                  <span style={{ color: "white" }}>✓ Persona encontrada</span>
+                </Button>
+              )}
+            {personaExist &&
+              (!formDataPacientes.dpersonalesId || formDataPacientes.dpersonalesId === null) &&
+              !cargando && (
+                <Button variant="primary" onClick={handleNextDP}>
+                  <span style={{ color: "white" }}>Siguiente</span>
+                </Button>
+              )}
             {!personaExist && formDataPacientes.ci.length >= 6 && !cargando && (
               <Button variant="primary" onClick={handleNextDP}>
                 <span style={{ color: "white" }}>Siguiente</span>
@@ -347,6 +460,7 @@ RegPacientes.defaultProps = {
 RegPacientes.propTypes = {
   show: PropTypes.bool,
   hClose: PropTypes.func,
+  fetch: PropTypes.func,
 };
 
 export default RegPacientes;

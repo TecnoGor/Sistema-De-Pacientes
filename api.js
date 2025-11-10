@@ -37,20 +37,55 @@ const pool = new Pool({
     port: process.env.REACT_APP_DB_PORT,
 });
 
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        const uploadDir = 'uploads/referencias/';
+        // Crear directorio si no existe
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        cb(null, uploadDir);
+    },
+    filename: function (req, file, cb) {
+        // Generar nombre único para el archivo
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+    }
+});
+
+const upload = multer({
+    storage: storage,
+    limits: {
+      fileSize: 5 * 1024 * 1024 // 5MB límite
+    },
+    fileFilter: function (req, file, cb) {
+      // Validar tipos de archivo
+      const allowedTypes = /jpeg|jpg|png|pdf/;
+      const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+      const mimetype = allowedTypes.test(file.mimetype);
+  
+      if (mimetype && extname) {
+        return cb(null, true);
+      } else {
+        cb(new Error('Solo se permiten archivos PDF e imágenes'));
+      }
+    }
+  });
+
 // Función para encriptar la contraseña en SHA-256
 function hashPassword(password) {
     return crypto.createHash('sha256').update(password).digest('hex');
 }
 
 // Ruta para registrar un nuevo usuario
-app.post('/register', async (req, res) => {
-    const { firstname, secondname, ci, mail, phone, username, password, status, rol } = req.body;
+app.post('/api/regUser', async (req, res) => {
+    const { id_persona, username, password, status, rol } = req.body;
     const passwordHash = hashPassword(password);
 
     try {
         const result = await pool.query(
-            'INSERT INTO users (firstname, secondname, ci, mail, phone, username, password, status, rol) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
-            [firstname, secondname, ci, mail, phone, username, passwordHash, status, rol]
+            'INSERT INTO usuarios (nuser, password, rolid, status, id_persona) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+            [username, passwordHash, rol, status, id_persona]
         );
         res.status(201).json(result.rows[0]);
     } catch (err) {
@@ -63,10 +98,15 @@ app.post('/api/regPersona', async (req, res) => {
 
     try {
         const result = await pool.query(
-            'INSERT INTO persona (cedula, nombres, apellidos, tipoci) VALUES ($1, $2, $3, $4) RETURNING *',
+            'INSERT INTO persona (cedula, nombres, apellidos, tipoci) VALUES ($1, $2, $3, $4) RETURNING id_persona',
             [ci, firstname, lastname, typeCi]
         );
-        res.status(201).json(result.rows[0]);
+        const id_persona = result.rows[0].id_persona;
+        res.status(201).json({
+            success: true,
+            message: "Persona Registrada",
+            id_persona: id_persona
+        });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -77,7 +117,7 @@ app.get('/api/selectPersona/:ci', async (req, res) => {
 
     try {
         const result = await pool.query(
-            'SELECT id_persona, nombres, apellidos, tipoci FROM persona WHERE cedula = $1',
+            'SELECT a.id_persona, a.nombres, a.apellidos, a.tipoci, a.cedula, b.id_dpersonales FROM persona a LEFT JOIN datospersonales b ON b.personaid = a.id_persona WHERE a.cedula = $1',
             [ci]
         );
         if (result.rows.length > 0) {
@@ -124,16 +164,27 @@ app.post('/api/regDatosPersonales', async (req, res) => {
     }
 });
 
-app.post('/api/regPacientes', async (req, res) => {
-    const { dpersonalesid, referencia, exception, representanteid, typePaciente, carnetA, carnetM, gradoM, componenteM } = req.body;
-
+app.post('/api/regPacientes', upload.single('referencia'), async (req, res) => {
+    const { dpersonalesId, excepcionD, representanteid, typePaciente, carnetA, carnetM, gradoM, componenteM } = req.body;
+    const referenciaDir = req.file ? req.file.path : null;
     try {
         const result = await pool.query(
             'INSERT INTO paciente (dpersonalesid, referencia, excepcion, representanteid, tipopaciente, carnetafiliado, carnetmilitar, gradoM, componenteM) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
-            [dpersonalesid, referencia, exception, representanteid, typePaciente, carnetA, carnetM, gradoM, componenteM]
+            [dpersonalesId, referenciaDir, excepcionD, representanteid, typePaciente, carnetA, carnetM, gradoM, componenteM]
         );
+        res.status(201).json({
+            success: true,
+            message: "Paciente registrado exitosamente",
+            data: result.rows[0]
+        })
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        if (req.file) {
+            fs.unlinkSync(req.file.path);
+        }
+        res.status(500).json({
+            success: false,
+            error: err.message
+        });
     }
 });
 

@@ -145,7 +145,7 @@ function Pacientes() {
                 </MDButton>
               </MDBox>
               <MDBox pt={3}>
-                <RegPacientes hClose={handleClose} show={show} />
+                <RegPacientes hClose={handleClose} show={show} fetch={fetchPacientes} />
               </MDBox>
             </Card>
           </Grid>

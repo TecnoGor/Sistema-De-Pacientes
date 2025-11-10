@@ -113,7 +113,6 @@ function PacienteForm({ formDataPaciente, handleChange, exception, handleFileCha
               <Form.Label>Referencia Medica</Form.Label>
               <Form.Control
                 type="file"
-                value={formDataPaciente.referencia || ""}
                 accept=".pdf, .png, .jpg, .jpeg"
                 name="referencia"
                 onChange={handleFileChange}
