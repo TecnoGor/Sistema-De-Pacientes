@@ -29,7 +29,7 @@ function RegConsultas({ close, show, fetch }) {
 
   const regConsultas = async () => {
     console.log("registrando consulta");
-  }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -133,10 +133,10 @@ function RegConsultas({ close, show, fetch }) {
       </Modal.Body>
       <Modal.Footer>
         <Button variant="primary" onClick={regPaciente}>
-            Registrar Paciente
+          Registrar Paciente
         </Button>
         <Button variant="secondary" onClick={handleBack}>
-            Atras
+          Atras
         </Button>
       </Modal.Footer>
     </Modal>
