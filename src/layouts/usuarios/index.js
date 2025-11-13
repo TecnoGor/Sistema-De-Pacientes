@@ -135,9 +135,10 @@ function Users() {
                 borderRadius="lg"
                 coloredShadow="info"
               >
-                <MDTypography variant="h6" color="white">
-                  Usuarios
-                </MDTypography>
+                <MDButton variant="gradient" color="dark" onClick={handleShow}>
+                  <Icon sx={{ fontWeight: "bold" }}>person</Icon>
+                  &nbsp;Registrar Usuarios
+                </MDButton>
               </MDBox>
               <MDBox pt={3}>
                 {loading ? (

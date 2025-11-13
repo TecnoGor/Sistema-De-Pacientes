@@ -156,7 +156,29 @@ app.get('/api/paciente/:id_persona', async (req, res) => {
         console.error(err);
         res.status(501).send('Error al obtener los datos');
     }
-  });
+});
+
+app.get('/api/pacienteII/:ci', async (req, res) => {
+    const { ci } = req.params;
+
+    try {
+        const result = await pool.query(
+            'SELECT p.id_persona, dp.id_dpersonales, pc.id_paciente, p.nombres, p.apellidos FROM paciente pc LEFT JOIN datospersonales dp ON dp.id_dpersonales = pc.dpersonalesid LEFT JOIN persona p ON p.id_persona = dp.personaid WHERE p.cedula=$1',
+            [ci]
+        );
+
+        if (result.rows.length > 0) {
+            res.json(result.rows[0]);
+        } else {
+            res.status(404).json({ message: 'Paciente no encontrado' });
+        }
+    } catch (err) {
+        // console.error('❌ Error en consulta:', err);
+        // res.status(500).json({ error: 'Error al obtener los datos', details: err.message });
+        console.error(err);
+        res.status(501).send('Error al obtener los datos');
+    }
+});
 
 app.post('/api/regDatosPersonales', async (req, res) => {
     const { personaId, mail, phone, bdate, scivil, studios, ocupation, state, municipio, parroquia, dirhouse } = req.body;
@@ -183,6 +205,23 @@ app.post('/api/regDatosPersonales', async (req, res) => {
     }
 });
 
+app.get('/api/medicos', async (req, res) => {
+    try {
+        const result = await pool.query(
+            `SELECT u.id_usuario, p.id_persona, p.nombres, p.apellidos, p.cedula
+             FROM usuarios u
+             INNER JOIN persona p ON u.id_persona = p.id_persona
+             WHERE u.rolid = $1 AND u.status = 1`,
+            [3] // ID del rol médico (ajusta según tu base de datos)
+        );
+        
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error al obtener médicos:', err);
+        res.status(500).json({ error: 'Error al obtener la lista de médicos' });
+    }
+});
+
 app.post('/api/regPacientes', upload.single('referencia'), async (req, res) => {
     const { dpersonalesId, excepcionD, representanteid, typePaciente, carnetA, carnetM, gradoM, componenteM } = req.body;
     const referenciaDir = req.file ? req.file.path : null;
@@ -194,6 +233,29 @@ app.post('/api/regPacientes', upload.single('referencia'), async (req, res) => {
         res.status(201).json({
             success: true,
             message: "Paciente registrado exitosamente",
+            data: result.rows[0]
+        })
+    } catch (err) {
+        if (req.file) {
+            fs.unlinkSync(req.file.path);
+        }
+        res.status(500).json({
+            success: false,
+            error: err.message
+        });
+    }
+});
+
+app.post('/api/regConsultas', async (req, res) => {
+    const { ci, pacienteId, firstname, lastname, codconsul, fechaConsul, motivo, diagnostic, tratment, medicoid } = req.body;
+    try {
+        const result = await pool.query(
+            'INSERT INTO consultamedica (pacienteid, codconsul, motivo, diagnostic, tratment, medicoid, fechaconsul) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+            [pacienteId, codconsul, fechaConsul, motivo, diagnostic, tratment, medicoid]
+        );
+        res.status(201).json({
+            success: true,
+            message: "Consulta registrada exitosamente",
             data: result.rows[0]
         })
     } catch (err) {

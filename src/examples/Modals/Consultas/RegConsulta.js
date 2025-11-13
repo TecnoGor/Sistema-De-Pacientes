@@ -14,55 +14,55 @@ function RegConsultas({ close, show, fetch }) {
   const [personaExist, setPersonaExist] = useState(false);
   const [cargando, setCargando] = useState(false);
   const [formDataConsultas, setFormDataConsultas] = useState({
-    personaId: null,
-    dpersonalesId: null,
-    typeCi: "",
+    pacienteId: "",
     ci: "",
     firstname: "",
     lastname: "",
-    mail: "",
-    phone: "",
-    bdate: "",
-    scivil: "",
+    codconsul: "",
+    fechaConsul: "",
+    motivo: "",
+    diagnostic: "",
+    tratment: "",
+    medicoid: "",
   });
   const API_Host = process.env.REACT_APP_API_URL;
 
   const regConsultas = async () => {
+    const result = await axios.post(`${API_Host}/api/regConsulta`, formDataConsultas, {
+      headers: { "Content-Type": "application/json" },
+    });
+
+    if (result.status === 201) {
+      Swal.fire({
+        title: "Consulta Registrada!",
+        text: "Consulta Agendada con exito.",
+        icon: "success",
+        draggable: true,
+      });
+    } else {
+      Swal.fire({
+        title: "Error al realizar la consulta.",
+        text: error.message,
+        icon: "error",
+        draggable: true,
+      });
+    }
+
     console.log("registrando consulta");
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormDataPacientes((prev) => ({
+    setFormDataConsultas((prev) => ({
       ...prev,
       [name]: value,
     }));
     if (name === "ci" && value.length >= 6) {
       // console.log(value);
-      consultaPersona(value);
+      consultaPaciente(value);
     }
     if (name === "exceptionCheck") {
       setExceptionActive(e.target.checked);
-    }
-  };
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      // Validar tipo de archivo
-      const allowedTypes = ["application/pdf", "image/jpeg", "image/jpg", "image/png"];
-      if (!allowedTypes.includes(file.type)) {
-        alert("Tipo de archivo no permitido. Use PDF, JPG o PNG.");
-        e.target.value = "";
-        return;
-      }
-      // Validar tamaño (ejemplo: 5MB máximo)
-      if (file.size > 5 * 1024 * 1024) {
-        alert("El archivo es demasiado grande. Máximo 5MB.");
-        e.target.value = "";
-        return;
-      }
-      setArchivo(file);
     }
   };
 
@@ -70,50 +70,54 @@ function RegConsultas({ close, show, fetch }) {
     if (cedula.length >= 6) {
       setCargando(true);
       try {
-        const response = await axios.get(`${API_Host}/api/selectPersona/${cedula}`);
+        const response = await axios.get(`${API_Host}/api/pacienteII/${cedula}`);
+        console.log(response.data.id_persona);
 
-        if (response.data && response.data.id_persona) {
+        if (response.data && Object.keys(response.data).length > 0) {
           setPersonaExist(true);
 
           // CORRECCIÓN: Manejo correcto de valores nulos
-          const dpId =
-            response.data.id_dpersonales !== null ? parseInt(response.data.id_dpersonales) : null;
+          // const dpId =
+          //   response.data.id_dpersonales !== null ? parseInt(response.data.id_dpersonales) : null;
 
-          setFormDataPacientes((prev) => ({
+          setFormDataConsultas((prev) => ({
             ...prev,
-            personaId: response.data.id_persona,
-            dpersonalesId: dpId,
+            personaId: response.data.id_paciente,
             firstname: response.data.nombres,
             lastname: response.data.apellidos,
-            typeCi: response.data.tipoci,
-            ci: response.data.cedula,
           }));
+          Swal.fire({
+            title: "Paciente encontrada!",
+            text: "Paciente encontrado con exito",
+            icon: "success",
+            draggable: true,
+          });
 
-          if (dpId) {
-            Swal.fire({
-              title: "Persona encontrada!",
-              text: "La persona ha sido registrado con anterioridad.",
-              icon: "success",
-              draggable: true,
-            });
-          } else {
-            Swal.fire({
-              title: "Persona encontrada!",
-              text: "La persona ha sido registrado con anterioridad. Debe registrar los datos Personales",
-              icon: "success",
-              draggable: true,
-            });
-          }
+          // if (dpId) {
+          //   Swal.fire({
+          //     title: "Persona encontrada!",
+          //     text: "La persona ha sido registrado con anterioridad.",
+          //     icon: "success",
+          //     draggable: true,
+          //   });
+          // } else {
+          //   Swal.fire({
+          //     title: "Persona encontrada!",
+          //     text: "La persona ha sido registrado con anterioridad. Debe registrar los datos Personales",
+          //     icon: "success",
+          //     draggable: true,
+          //   });
+          // }
         } else {
           setPersonaExist(false);
         }
       } catch (error) {
-        Swal.fire({
-          title: "Error al consultar la persona",
-          text: error.message,
-          icon: "error",
-          draggable: true,
-        });
+        // Swal.fire({
+        //   title: "Error al consultar la persona",
+        //   text: error.message,
+        //   icon: "error",
+        //   draggable: true,
+        // });
         setPersonaExist(false);
       } finally {
         setCargando(false);
@@ -126,17 +130,17 @@ function RegConsultas({ close, show, fetch }) {
   return (
     <Modal size="lg" show={show} onHide={close} backdrop="static" keyboard={false}>
       <Modal.Header closeButton>
-        <Modal.Title>Registrar Paciente</Modal.Title>
+        <Modal.Title>Registrar - Programar Consulta</Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        <ConsultaForm formDataConsulta={formDataPacientes} handleChange={handleChange} />
+        <ConsultaForm formDataConsulta={formDataConsultas} handleChange={handleChange} />
       </Modal.Body>
       <Modal.Footer>
-        <Button variant="primary" onClick={regPaciente}>
-          Registrar Paciente
+        <Button variant="primary" onClick={regConsultas}>
+          Registrar Consulta
         </Button>
-        <Button variant="secondary" onClick={handleBack}>
-          Atras
+        <Button variant="secondary" onClick={close}>
+          Cerrar
         </Button>
       </Modal.Footer>
     </Modal>
