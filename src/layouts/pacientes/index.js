@@ -30,6 +30,7 @@ import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
 import RegPacientes from "examples/Modals/Pacientes/RegPacientes";
+import InfoPaciente from "examples/Modals/Pacientes/InfoPaciente";
 import DataTable from "examples/Tables/DataTable";
 // import Carnet from "examples/Cards/Carnet";
 
@@ -40,11 +41,18 @@ import projectsTableData from "layouts/tables/data/projectsTableData";
 
 function Pacientes() {
   const [show, setShow] = useState(false);
+  const [showInfo, setShowInfo] = useState(false);
   const [pacientes, setPacientes] = useState([]);
+  const getId = 0;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const handleClose = () => setShow(false);
+  const handleCloseInfo = () => setShowInfo(false);
   const handleShow = () => setShow(true);
+  const handleShowInfo = async (a) => {
+    getId = a;
+    setShowInfo(true);
+  };
   const API_Host = process.env.REACT_APP_API_URL;
 
   const fetchPacientes = async () => {
@@ -81,8 +89,8 @@ function Pacientes() {
     cedula: paciente.cedula,
     actions: (
       <MDBox display="flex" gap={1}>
-        <MDButton variant="text" color="info" size="small">
-          <Icon>edit</Icon>&nbsp;Editar
+        <MDButton onClick={handleShowInfo} variant="text" color="info" size="large">
+          <Icon>info</Icon>&nbsp;
         </MDButton>
         <MDButton variant="text" color="error" size="small">
           <Icon>delete</Icon>&nbsp;Eliminar
@@ -146,6 +154,12 @@ function Pacientes() {
               </MDBox>
               <MDBox pt={3}>
                 <RegPacientes hClose={handleClose} show={show} fetch={fetchPacientes} />
+                <InfoPaciente
+                  close={handleCloseInfo}
+                  show={showInfo}
+                  fetch={fetchPacientes}
+                  id_persona={getId}
+                />
               </MDBox>
             </Card>
           </Grid>
