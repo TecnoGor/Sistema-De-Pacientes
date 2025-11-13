@@ -132,9 +132,10 @@ function Consultas() {
                 borderRadius="lg"
                 coloredShadow="info"
               >
-                <MDTypography variant="h6" color="white">
-                  Registrar Consulta
-                </MDTypography>
+                <MDButton variant="gradient" color="dark" onClick={handleShow}>
+                  <Icon sx={{ fontWeight: "bold" }}>person</Icon>
+                  &nbsp;Registrar Pacientes
+                </MDButton>
               </MDBox>
               <MDBox pt={3}>
                 {/* <Carnet number={4562112245947852} holder="jack peterson" expires="11/22" /> */}

@@ -139,6 +139,25 @@ app.get('/api/selectPersona/:ci', async (req, res) => {
     }
 });
 
+app.get('/api/paciente/:id_persona', async (req, res) => {
+    const { id_persona } = req.params;
+
+    try {
+        const result = await pool.query(
+            'SELECT p.id_persona, dp.id_dpersonales, p.nombres, p.apellidos, p.tipoci, p.cedula, dp.correo, dp.telefono, dp.fechanac, dp.edocivil, dp.nivinst, dp.profesion, dp.direccion, pc.referencia, pc.excepcion, pc.representanteid, pc.tipopaciente, pc.carnetafiliado, pc.carnetmilitar, pc.gradom, pc.componentem FROM paciente pc INNER JOIN datospersonales dp ON dp.id_dpersonales = pc.dpersonalesid INNER JOIN persona p ON p.id_persona = dp.personaid WHERE p.id_persona=$1',
+            [id_persona]
+        );
+        if (result.rows.length > 0) {
+            res.json(result.rows[0]);
+        } else {
+            res.json({});
+        }
+    } catch (err) {
+        console.error(err);
+        res.status(501).send('Error al obtener los datos');
+    }
+  });
+
 app.post('/api/regDatosPersonales', async (req, res) => {
     const { personaId, mail, phone, bdate, scivil, studios, ocupation, state, municipio, parroquia, dirhouse } = req.body;
     const direccionCompleta = state + ", Municipio " + municipio + ", Parroquia " + parroquia + ", " + dirhouse;

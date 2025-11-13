@@ -43,14 +43,17 @@ function Pacientes() {
   const [show, setShow] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
   const [pacientes, setPacientes] = useState([]);
-  const getId = 0;
+  const [getId, setGetId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const handleClose = () => setShow(false);
-  const handleCloseInfo = () => setShowInfo(false);
+  const handleCloseInfo = () => {
+    setShowInfo(false);
+    setGetId(null);
+  };
   const handleShow = () => setShow(true);
-  const handleShowInfo = async (a) => {
-    getId = a;
+  const handleShowInfo = (a) => {
+    setGetId(a);
     setShowInfo(true);
   };
   const API_Host = process.env.REACT_APP_API_URL;
@@ -89,7 +92,12 @@ function Pacientes() {
     cedula: paciente.cedula,
     actions: (
       <MDBox display="flex" gap={1}>
-        <MDButton onClick={handleShowInfo} variant="text" color="info" size="large">
+        <MDButton
+          onClick={() => handleShowInfo(paciente.id_persona)}
+          variant="text"
+          color="info"
+          size="large"
+        >
           <Icon>info</Icon>&nbsp;
         </MDButton>
         <MDButton variant="text" color="error" size="small">
