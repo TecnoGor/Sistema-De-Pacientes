@@ -32,6 +32,8 @@ import Footer from "examples/Footer";
 import DataTable from "examples/Tables/DataTable";
 // import Carnet from "examples/Cards/Carnet";
 
+import RegConsultas from "examples/Modals/Consultas/RegConsulta";
+
 // Data
 import authorsTableData from "layouts/tables/data/authorsTableData";
 import projectsTableData from "layouts/tables/data/projectsTableData";
@@ -79,7 +81,7 @@ function Consultas() {
     actions: (
       <MDBox display="flex" gap={1}>
         <MDButton variant="text" color="info" size="small">
-          <Icon>edit</Icon>&nbsp;Editar
+          <Icon>info</Icon>&nbsp;
         </MDButton>
         <MDButton variant="text" color="error" size="small">
           <Icon>delete</Icon>&nbsp;Eliminar
@@ -134,10 +136,11 @@ function Consultas() {
               >
                 <MDButton variant="gradient" color="dark" onClick={handleShow}>
                   <Icon sx={{ fontWeight: "bold" }}>person</Icon>
-                  &nbsp;Registrar Pacientes
+                  &nbsp;Registrar Consultas
                 </MDButton>
               </MDBox>
               <MDBox pt={3}>
+                <RegConsultas close={handleClose} show={show} fetch={fetchConsultas} />
                 {/* <Carnet number={4562112245947852} holder="jack peterson" expires="11/22" /> */}
               </MDBox>
             </Card>
