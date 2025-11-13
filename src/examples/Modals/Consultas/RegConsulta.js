@@ -9,8 +9,6 @@ import Swal from "sweetalert2";
 import { CircularProgress } from "@mui/material";
 
 function RegConsultas({ close, show, fetch }) {
-  const [currentStep, setCurrentStep] = useState(1);
-  const [exceptionActive, setExceptionActive] = useState(false);
   const [personaExist, setPersonaExist] = useState(false);
   const [cargando, setCargando] = useState(false);
   const [formDataConsultas, setFormDataConsultas] = useState({
@@ -28,27 +26,30 @@ function RegConsultas({ close, show, fetch }) {
   const API_Host = process.env.REACT_APP_API_URL;
 
   const regConsultas = async () => {
-    const result = await axios.post(`${API_Host}/api/regConsulta`, formDataConsultas, {
-      headers: { "Content-Type": "application/json" },
-    });
-
-    if (result.status === 201) {
-      Swal.fire({
-        title: "Consulta Registrada!",
-        text: "Consulta Agendada con exito.",
-        icon: "success",
-        draggable: true,
+    try {
+      console.log(formDataConsultas);
+      const result = await axios.post(`${API_Host}/api/regConsultas`, formDataConsultas, {
+        headers: { "Content-Type": "application/json" },
       });
-    } else {
+
+      if (result.status === 201) {
+        Swal.fire({
+          title: "Consulta Registrada!",
+          text: "Consulta Agendada con exito.",
+          icon: "success",
+          draggable: true,
+        });
+      }
+      fetch();
+    } catch (err) {
+      // console.log("registrando consulta");
       Swal.fire({
         title: "Error al realizar la consulta.",
-        text: error.message,
+        text: err.message,
         icon: "error",
         draggable: true,
       });
     }
-
-    console.log("registrando consulta");
   };
 
   const handleChange = (e) => {
@@ -82,7 +83,7 @@ function RegConsultas({ close, show, fetch }) {
 
           setFormDataConsultas((prev) => ({
             ...prev,
-            personaId: response.data.id_paciente,
+            pacienteId: response.data.id_paciente,
             firstname: response.data.nombres,
             lastname: response.data.apellidos,
           }));

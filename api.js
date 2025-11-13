@@ -211,7 +211,7 @@ app.get('/api/medicos', async (req, res) => {
             `SELECT u.id_usuario, p.id_persona, p.nombres, p.apellidos, p.cedula
              FROM usuarios u
              INNER JOIN persona p ON u.id_persona = p.id_persona
-             WHERE u.rolid = $1 AND u.status = 1`,
+             WHERE u.rolid = $1 AND u.status = '1'`,
             [3] // ID del rol médico (ajusta según tu base de datos)
         );
         
@@ -248,10 +248,11 @@ app.post('/api/regPacientes', upload.single('referencia'), async (req, res) => {
 
 app.post('/api/regConsultas', async (req, res) => {
     const { ci, pacienteId, firstname, lastname, codconsul, fechaConsul, motivo, diagnostic, tratment, medicoid } = req.body;
+    const medvint= parseInt(medicoid);
     try {
         const result = await pool.query(
             'INSERT INTO consultamedica (pacienteid, codconsul, motivo, diagnostic, tratment, medicoid, fechaconsul) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
-            [pacienteId, codconsul, fechaConsul, motivo, diagnostic, tratment, medicoid]
+            [pacienteId, codconsul, motivo, diagnostic, tratment, medvint, fechaConsul]
         );
         res.status(201).json({
             success: true,
@@ -259,9 +260,7 @@ app.post('/api/regConsultas', async (req, res) => {
             data: result.rows[0]
         })
     } catch (err) {
-        if (req.file) {
-            fs.unlinkSync(req.file.path);
-        }
+        console.error('Error al obtener:', err);
         res.status(500).json({
             success: false,
             error: err.message
@@ -351,7 +350,7 @@ app.get('/api/especialistas', async (req, res) => {
 
 app.get('/api/consultasMedicas', async (req, res) => {
   try {
-      const { rows } = await pool.query('SELECT cm.codconsul, pn.nombres, pn.apellidos, cm.fechaingreso FROM consultamedica cm INNER JOIN paciente p ON cm.pacienteid = p.id_paciente INNER JOIN datospersonales dp ON p.dpersonalesid = dp.id_dpersonales INNER JOIN persona pn ON dp.personaid = pn.id_persona');
+      const { rows } = await pool.query('SELECT cm.codconsul, pn.nombres, pn.apellidos, pn.cedula, cm.fechaconsul FROM consultamedica cm INNER JOIN paciente p ON cm.pacienteid = p.id_paciente INNER JOIN datospersonales dp ON p.dpersonalesid = dp.id_dpersonales INNER JOIN persona pn ON dp.personaid = pn.id_persona');
       res.json(rows);
   } catch (err) {
       console.error(err);

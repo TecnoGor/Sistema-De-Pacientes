@@ -51,7 +51,7 @@ function Consultas() {
     try {
       setLoading(true);
       setError(null);
-      const response = await axios.get(`${API_Host}/api/especialistas`);
+      const response = await axios.get(`${API_Host}/api/consultasMedicas`);
       setConsultas(response.data);
     } catch (err) {
       console.log("Error al obtener Consultas", err);
@@ -66,7 +66,7 @@ function Consultas() {
   }, []);
 
   const columns = [
-    { Header: "ID", accessor: "id_especialista", width: "10%" },
+    { Header: "ID", accessor: "id_conmed", width: "10%" },
     { Header: "Nombres", accessor: "nombres", width: "20%" },
     { Header: "Apellidos", accessor: "apellidos", width: "20%" },
     { Header: "Cédula", accessor: "cedula", width: "15%" },
@@ -83,9 +83,9 @@ function Consultas() {
         <MDButton variant="text" color="info" size="small">
           <Icon>info</Icon>&nbsp;
         </MDButton>
-        <MDButton variant="text" color="error" size="small">
+        {/* <MDButton variant="text" color="error" size="small">
           <Icon>delete</Icon>&nbsp;Eliminar
-        </MDButton>
+        </MDButton> */}
       </MDBox>
     ),
   }));

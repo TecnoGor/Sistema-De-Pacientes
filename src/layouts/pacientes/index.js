@@ -100,9 +100,9 @@ function Pacientes() {
         >
           <Icon>info</Icon>&nbsp;
         </MDButton>
-        <MDButton variant="text" color="error" size="small">
+        {/* <MDButton variant="text" color="error" size="small">
           <Icon>delete</Icon>&nbsp;Eliminar
-        </MDButton>
+        </MDButton> */}
       </MDBox>
     ),
   }));

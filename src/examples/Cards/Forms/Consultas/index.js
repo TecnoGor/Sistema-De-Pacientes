@@ -6,15 +6,18 @@ import Container from "react-bootstrap/Container";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import Swal from "sweetalert2";
+import axios from "axios";
 
 function ConsultaForm({ formDataConsulta, handleChange }) {
   const [medicos, setMedicos] = useState([]);
+  const API_Host = process.env.REACT_APP_API_URL;
 
   // Cargar médicos al montar el componente
   useEffect(() => {
     const cargarMedicos = async () => {
       try {
         const response = await axios.get(`${API_Host}/api/medicos`);
+        console.log(response.data);
         setMedicos(response.data);
       } catch (error) {
         console.error("Error al cargar médicos:", error);
