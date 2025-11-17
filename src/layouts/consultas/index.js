@@ -45,6 +45,7 @@ function Consultas() {
   const [error, setError] = useState(null);
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
+  let i = 1;
   const API_Host = process.env.REACT_APP_API_URL;
 
   const fetchConsultas = async () => {
@@ -74,7 +75,7 @@ function Consultas() {
   ];
 
   const rows = consultas.map((consulta) => ({
-    id_consulta: consulta.id_consulta,
+    id_consulta: i++,
     nombres: consulta.nombres,
     apellidos: consulta.apellidos,
     cedula: consulta.cedula,

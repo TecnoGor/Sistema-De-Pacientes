@@ -43,6 +43,7 @@ function Users() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const handleClose = () => setShow(false);
+  let i = 1;
   const handleShow = () => setShow(true);
   // const { columns, rows } = authorsTableData();
   // const { columns: pColumns, rows: pRows } = projectsTableData();
@@ -75,7 +76,7 @@ function Users() {
   ];
 
   const rows = users.map((user) => ({
-    id_usuario: user.id_usuario,
+    id_usuario: i++,
     nuser: user.nuser,
     rol: user.rolid,
     fechacreacion: user.fechacreacion,

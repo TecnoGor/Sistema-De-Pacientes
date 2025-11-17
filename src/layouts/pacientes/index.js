@@ -41,6 +41,7 @@ import projectsTableData from "layouts/tables/data/projectsTableData";
 
 function Pacientes() {
   const [show, setShow] = useState(false);
+  let i = 1;
   const [showInfo, setShowInfo] = useState(false);
   const [pacientes, setPacientes] = useState([]);
   const [getId, setGetId] = useState(null);
@@ -86,7 +87,7 @@ function Pacientes() {
   ];
 
   const rows = pacientes.map((paciente) => ({
-    id_persona: paciente.id_persona,
+    id_persona: i++,
     nombres: paciente.nombres,
     apellidos: paciente.apellidos,
     cedula: paciente.cedula,
