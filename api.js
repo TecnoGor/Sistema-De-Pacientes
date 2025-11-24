@@ -89,6 +89,7 @@ app.post('/api/regUser', async (req, res) => {
         );
         res.status(201).json(result.rows[0]);
     } catch (err) {
+        console.log(err);
         res.status(500).json({ error: err.message });
     }
 });
@@ -108,7 +109,17 @@ app.post('/api/regPersona', async (req, res) => {
             id_persona: id_persona
         });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        if (err.code === '23505') {
+            console.log("Cedula existente");
+            res.status(500).json({
+                error: "Cedula duplicada",
+                message: "La cedula ya se encuentra registrada",
+                code: err.code,
+            });
+
+        } else {
+            res.status(500).json({ error: err.message });
+        }
     }
 });
 
@@ -320,7 +331,7 @@ app.post('logout', async (req, res) => {
 // Ruta para consultar los usuarios
 app.get('/api/users', async (req, res) => {
     try {
-        const { rows } = await pool.query('SELECT id_usuario, nuser, rolid, fechacreacion FROM usuarios');
+        const { rows } = await pool.query('SELECT u.id_usuario, u.nuser, u.rolid, r.nrol, u.fechacreacion FROM usuarios u INNER JOIN roles r ON r.id_rol = u.rolid');
         res.json(rows);
     } catch (err) {
         console.error(err);

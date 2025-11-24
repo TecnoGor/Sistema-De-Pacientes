@@ -11,120 +11,103 @@ import { CircularProgress } from "@mui/material";
 function RegUsuarios({ close, show, fetch }) {
   const [personaExist, setPersonaExist] = useState(false);
   const [cargando, setCargando] = useState(false);
-  const [formDataConsultas, setFormDataConsultas] = useState({
-    pacienteId: "",
-    ci: "",
+  const [formDataUsuarios, setFormDataUsuarios] = useState({
+    id_usuario: "",
+    nuser: "",
     firstname: "",
     lastname: "",
-    codconsul: "",
-    fechaConsul: "",
-    motivo: "",
-    diagnostic: "",
-    tratment: "",
-    medicoid: "",
+    typeCi: "V",
+    ci: "",
+    rol: null,
+    password: "",
+    status: 1,
+    id_persona: "",
   });
   const API_Host = process.env.REACT_APP_API_URL;
 
-  const regConsultas = async () => {
+  const regUsuario = async () => {
     try {
-      console.log(formDataConsultas);
-      const result = await axios.post(`${API_Host}/api/regConsultas`, formDataConsultas, {
+      console.log(formDataUsuarios);
+      const result = await axios.post(`${API_Host}/api/regPersona`, formDataUsuarios, {
         headers: { "Content-Type": "application/json" },
       });
 
       if (result.status === 201) {
+        const id_persona = result.data.id_persona;
+        if (!id_persona) {
+          throw new Error("No se recibio el id dwe la persona en el registro");
+        }
+        const dataUsuario = {
+          id_persona: id_persona,
+          username: formDataUsuarios.nuser,
+          password: formDataUsuarios.password,
+          status: formDataUsuarios.status,
+          rol: formDataUsuarios.rol,
+        };
+
+        const responseUsuario = await axios.post(`${API_Host}/api/regUser`, dataUsuario, {
+          timeout: 5000,
+        });
+
+        if (responseUsuario.status === 201) {
+          setFormDataUsuarios({
+            firstname: "",
+            lastname: "",
+            ci: "",
+            mail: "",
+            phone: "",
+            nuser: "",
+            password: "",
+            status: 1,
+            rol: 2,
+          });
+          fetch();
+          Swal.fire({
+            title: "Usuario Registrado!",
+            text: "Usuario registrado con exito.",
+            icon: "success",
+            draggable: true,
+          });
+        }
+      }
+    } catch (err) {
+      if (err.response && err.response.data && err.response.data.code === "23505") {
         Swal.fire({
-          title: "Consulta Registrada!",
-          text: "Consulta Agendada con exito.",
-          icon: "success",
+          title: "Error al realizar el registro.",
+          text: " La persona ya se encuentra registrada.",
+          icon: "error",
+          draggable: true,
+        });
+      } else if (err.response && err.response.data) {
+        // Otros errores del servidor
+        Swal.fire({
+          title: "Error al realizar el registro",
+          text: err.response.data.message || err.message,
+          icon: "error",
+          draggable: true,
+        });
+      } else {
+        // Errores de conexión u otros
+        Swal.fire({
+          title: "Error de conexión",
+          text: err.message,
+          icon: "error",
           draggable: true,
         });
       }
-      fetch();
-    } catch (err) {
-      // console.log("registrando consulta");
-      Swal.fire({
-        title: "Error al realizar la consulta.",
-        text: err.message,
-        icon: "error",
-        draggable: true,
-      });
+    } finally {
+      setCargando(false);
     }
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormDataConsultas((prev) => ({
+    setFormDataUsuarios((prev) => ({
       ...prev,
       [name]: value,
     }));
-    if (name === "ci" && value.length >= 6) {
-      // console.log(value);
-      consultaPaciente(value);
-    }
     if (name === "exceptionCheck") {
       setExceptionActive(e.target.checked);
-    }
-  };
-
-  const consultaPaciente = async (cedula) => {
-    if (cedula.length >= 6) {
-      setCargando(true);
-      try {
-        const response = await axios.get(`${API_Host}/api/pacienteII/${cedula}`);
-        console.log(response.data.id_persona);
-
-        if (response.data && Object.keys(response.data).length > 0) {
-          setPersonaExist(true);
-
-          // CORRECCIÓN: Manejo correcto de valores nulos
-          // const dpId =
-          //   response.data.id_dpersonales !== null ? parseInt(response.data.id_dpersonales) : null;
-
-          setFormDataConsultas((prev) => ({
-            ...prev,
-            pacienteId: response.data.id_paciente,
-            firstname: response.data.nombres,
-            lastname: response.data.apellidos,
-          }));
-          Swal.fire({
-            title: "Paciente encontrada!",
-            text: "Paciente encontrado con exito",
-            icon: "success",
-            draggable: true,
-          });
-
-          // if (dpId) {
-          //   Swal.fire({
-          //     title: "Persona encontrada!",
-          //     text: "La persona ha sido registrado con anterioridad.",
-          //     icon: "success",
-          //     draggable: true,
-          //   });
-          // } else {
-          //   Swal.fire({
-          //     title: "Persona encontrada!",
-          //     text: "La persona ha sido registrado con anterioridad. Debe registrar los datos Personales",
-          //     icon: "success",
-          //     draggable: true,
-          //   });
-          // }
-        } else {
-          setPersonaExist(false);
-        }
-      } catch (error) {
-        // Swal.fire({
-        //   title: "Error al consultar la persona",
-        //   text: error.message,
-        //   icon: "error",
-        //   draggable: true,
-        // });
-        setPersonaExist(false);
-      } finally {
-        setCargando(false);
-      }
-    } else {
-      setPersonaExist(false);
     }
   };
 
@@ -134,11 +117,11 @@ function RegUsuarios({ close, show, fetch }) {
         <Modal.Title>Registrar - Programar Consulta</Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        <ConsultaForm formDataConsulta={formDataConsultas} handleChange={handleChange} />
+        <UsuarioForm formDataUsuario={formDataUsuarios} handleChange={handleChange} />
       </Modal.Body>
       <Modal.Footer>
-        <Button variant="primary" onClick={regConsultas}>
-          Registrar Consulta
+        <Button variant="primary" onClick={regUsuario}>
+          Registrar Usuario
         </Button>
         <Button variant="secondary" onClick={close}>
           Cerrar

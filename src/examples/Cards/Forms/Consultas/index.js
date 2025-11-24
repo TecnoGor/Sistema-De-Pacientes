@@ -110,6 +110,7 @@ function ConsultaForm({ formDataConsulta, handleChange }) {
               value={formDataConsulta.fechaConsul || ""}
               name="fechaConsul"
               onChange={handleChange}
+              min={new Date().toISOString().split("T")[0]}
             />
           </Form.Group>
         </Col>

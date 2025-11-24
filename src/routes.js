@@ -7,6 +7,7 @@ import Notifications from "layouts/notifications";
 import Profile from "layouts/profile";
 import Pacientes from "layouts/pacientes";
 import Consultas from "layouts/consultas";
+import Citas from "layouts/citas";
 import Especialistas from "layouts/especialistas";
 import Users from "layouts/usuarios";
 import Roles from "layouts/roles";
@@ -40,6 +41,14 @@ const routes = [
     icon: <Icon fontSize="small">medication</Icon>,
     route: "/consultas",
     component: <Consultas />,
+  },
+  {
+    type: "collapse",
+    name: "Citas Medicas",
+    key: "citas",
+    icon: <Icon fontSize="small">event</Icon>,
+    route: "/citas",
+    component: <Citas />,
   },
   {
     type: "collapse",
