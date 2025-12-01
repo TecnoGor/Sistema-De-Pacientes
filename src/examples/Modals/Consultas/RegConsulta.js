@@ -22,6 +22,7 @@ function RegConsultas({ close, show, fetch }) {
     diagnostic: "",
     tratment: "",
     medicoid: "",
+    status: true,
   });
   const API_Host = process.env.REACT_APP_API_URL;
 
@@ -129,7 +130,7 @@ function RegConsultas({ close, show, fetch }) {
   };
 
   return (
-    <Modal size="lg" show={show} onHide={close} backdrop="static" keyboard={false}>
+    <Modal size="lg" show={show} onHide={close} backdrop="static" keyboard={false} centered>
       <Modal.Header closeButton>
         <Modal.Title>Registrar - Programar Consulta</Modal.Title>
       </Modal.Header>

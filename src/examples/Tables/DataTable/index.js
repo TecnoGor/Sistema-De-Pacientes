@@ -28,12 +28,14 @@ import TableContainer from "@mui/material/TableContainer";
 import TableRow from "@mui/material/TableRow";
 import Icon from "@mui/material/Icon";
 import Autocomplete from "@mui/material/Autocomplete";
+import { MenuItem } from "@mui/material";
 
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import MDInput from "components/MDInput";
 import MDPagination from "components/MDPagination";
+import MDButton from "components/MDButton";
 
 // Material Dashboard 2 React example components
 import DataTableHeadCell from "examples/Tables/DataTable/DataTableHeadCell";
@@ -47,6 +49,7 @@ function DataTable({
   pagination,
   isSorted,
   noEndBorder,
+  showFilters,
 }) {
   const defaultValue = entriesPerPage.defaultValue ? entriesPerPage.defaultValue : 10;
   const entries = entriesPerPage.entries
@@ -55,8 +58,50 @@ function DataTable({
   const columns = useMemo(() => table.columns, [table]);
   const data = useMemo(() => table.rows, [table]);
 
+  const [fechaDesde, setFechaDesde] = useState("");
+  const [fechaHasta, setFechaHasta] = useState("");
+  const [medicoSeleccionado, setMedicoSeleccionado] = useState("");
+  const [medicos, setMedicos] = useState([]);
+
+  useEffect(() => {
+    const medicosUnicos = [...new Set(data.map((item) => item.nombresM))].filter(Boolean);
+    setMedicos(medicosUnicos);
+  }, [data]);
+
+  // Filtrar datos basados en los filtros
+  const filteredData = useMemo(() => {
+    return data.filter((item) => {
+      // Filtro por médico
+      if (medicoSeleccionado && item.nombresM !== medicoSeleccionado) {
+        return false;
+      }
+
+      // Filtro por fecha
+      if (fechaDesde || fechaHasta) {
+        const fechaCita = new Date(item.fecha_cita);
+        if (fechaDesde && fechaCita < new Date(fechaDesde)) {
+          return false;
+        }
+        if (fechaHasta) {
+          const fechaHastaObj = new Date(fechaHasta);
+          fechaHastaObj.setHours(23, 59, 59, 999); // Incluir todo el día
+          if (fechaCita > fechaHastaObj) {
+            return false;
+          }
+        }
+      }
+      return true;
+    });
+  }, [data, medicoSeleccionado, fechaDesde, fechaHasta]);
+
+  const limpiarFiltros = () => {
+    setFechaDesde("");
+    setFechaHasta("");
+    setMedicoSeleccionado("");
+  };
+
   const tableInstance = useTable(
-    { columns, data, initialState: { pageIndex: 0 } },
+    { columns, data: filteredData, initialState: { pageIndex: 0 } },
     useGlobalFilter,
     useSortBy,
     usePagination
@@ -147,6 +192,73 @@ function DataTable({
 
   return (
     <TableContainer sx={{ boxShadow: "none" }}>
+      {/* Sección de Filtros */}
+      {showFilters && (
+        <MDBox
+          display="flex"
+          flexDirection={{ xs: "column", sm: "row" }}
+          justifyContent="space-between"
+          alignItems={{ xs: "flex-start", sm: "center" }}
+          gap={2}
+          p={3}
+          sx={{
+            backgroundColor: "background.default",
+            borderBottom: 1,
+            borderColor: "divider",
+          }}
+        >
+          <MDBox
+            display="flex"
+            flexDirection={{ xs: "column", sm: "row" }}
+            gap={2}
+            alignItems="center"
+          >
+            {/* Filtro por Médico */}
+            <MDBox width="15rem">
+              <Autocomplete
+                options={medicos}
+                value={medicoSeleccionado}
+                onChange={(event, newValue) => setMedicoSeleccionado(newValue || "")}
+                renderInput={(params) => (
+                  <MDInput {...params} label="Filtrar por médico" size="small" />
+                )}
+              />
+            </MDBox>
+
+            {/* Filtro por Fecha Desde */}
+            <MDBox width="12rem">
+              <MDInput
+                type="date"
+                label="Fecha desde"
+                value={fechaDesde}
+                onChange={(e) => setFechaDesde(e.target.value)}
+                size="small"
+                fullWidth
+              />
+            </MDBox>
+
+            {/* Filtro por Fecha Hasta */}
+            <MDBox width="12rem">
+              <MDInput
+                type="date"
+                label="Fecha hasta"
+                value={fechaHasta}
+                onChange={(e) => setFechaHasta(e.target.value)}
+                size="small"
+                fullWidth
+              />
+            </MDBox>
+          </MDBox>
+
+          {/* Botón Limpiar Filtros */}
+          <MDButton variant="outlined" color="secondary" onClick={limpiarFiltros} size="small">
+            <Icon>clear</Icon>
+            &nbsp;Limpiar
+          </MDButton>
+        </MDBox>
+      )}
+
+      {/* Sección de Búsqueda y Entradas por Página */}
       {entriesPerPage || canSearch ? (
         <MDBox display="flex" justifyContent="space-between" alignItems="center" p={3}>
           {entriesPerPage && (
@@ -175,7 +287,7 @@ function DataTable({
                 size="small"
                 fullWidth
                 onChange={({ currentTarget }) => {
-                  setSearch(search);
+                  setSearch(currentTarget.value);
                   onSearchChange(currentTarget.value);
                 }}
               />
@@ -183,6 +295,8 @@ function DataTable({
           )}
         </MDBox>
       ) : null}
+
+      {/* Tabla */}
       <Table {...getTableProps()}>
         <MDBox component="thead">
           {headerGroups.map((headerGroup, key) => (
@@ -222,6 +336,7 @@ function DataTable({
         </TableBody>
       </Table>
 
+      {/* Paginación */}
       <MDBox
         display="flex"
         flexDirection={{ xs: "column", sm: "row" }}
@@ -233,6 +348,9 @@ function DataTable({
           <MDBox mb={{ xs: 3, sm: 0 }}>
             <MDTypography variant="button" color="secondary" fontWeight="regular">
               Showing {entriesStart} to {entriesEnd} of {rows.length} entries
+              {showFilters && (fechaDesde || fechaHasta || medicoSeleccionado) && (
+                <span style={{ fontStyle: "italic", color: "#666" }}>(filtradas)</span>
+              )}
             </MDTypography>
           </MDBox>
         )}
@@ -277,6 +395,7 @@ DataTable.defaultProps = {
   pagination: { variant: "gradient", color: "info" },
   isSorted: true,
   noEndBorder: false,
+  showFilters: false,
 };
 
 // Typechecking props for the DataTable
@@ -306,6 +425,7 @@ DataTable.propTypes = {
   }),
   isSorted: PropTypes.bool,
   noEndBorder: PropTypes.bool,
+  showFilters: PropTypes.bool,
 };
 
 export default DataTable;

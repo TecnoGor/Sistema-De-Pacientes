@@ -258,16 +258,38 @@ app.post('/api/regPacientes', upload.single('referencia'), async (req, res) => {
 });
 
 app.post('/api/regConsultas', async (req, res) => {
-    const { ci, pacienteId, firstname, lastname, codconsul, fechaConsul, motivo, diagnostic, tratment, medicoid } = req.body;
+    const { ci, pacienteId, firstname, lastname, codconsul, fechaConsul, motivo, diagnostic, tratment, medicoid, status } = req.body;
     const medvint= parseInt(medicoid);
     try {
         const result = await pool.query(
-            'INSERT INTO consultamedica (pacienteid, codconsul, motivo, diagnostic, tratment, medicoid, fechaconsul) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
-            [pacienteId, codconsul, motivo, diagnostic, tratment, medvint, fechaConsul]
+            'INSERT INTO consultamedica (pacienteid, codconsul, motivo, diagnostic, tratment, medicoid, fechaconsul, status) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+            [pacienteId, codconsul, motivo, diagnostic, tratment, medvint, fechaConsul, status]
         );
         res.status(201).json({
             success: true,
             message: "Consulta registrada exitosamente",
+            data: result.rows[0]
+        })
+    } catch (err) {
+        console.error('Error al obtener:', err);
+        res.status(500).json({
+            success: false,
+            error: err.message
+        });
+    }
+});
+
+app.post('/api/regAdvanceConsul', async (req, res) => {
+    const { id_conmed, tiempo_tratamiento, fecha_avance, estado_paciente, diagnostico } = req.body;
+
+    try {
+        const result = await pool.query(
+            'INSERT INTO avance_consultas (id_conmed, tiempo_tratamiento, fecha_avance, estado_paciente, diagnostico) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+            [id_conmed, tiempo_tratamiento, fecha_avance, estado_paciente, diagnostico]
+        );
+        res.status(201).json({
+            success: true,
+            message: "Avance registrado exitosamente",
             data: result.rows[0]
         })
     } catch (err) {
@@ -359,15 +381,77 @@ app.get('/api/especialistas', async (req, res) => {
   }
 });
 
-app.get('/api/consultasMedicas', async (req, res) => {
+app.get('/api/consultaMedica/:id_conmed', async (req, res) => {
+    const { id_conmed } = req.params;
+
   try {
-      const { rows } = await pool.query('SELECT cm.codconsul, pn.nombres, pn.apellidos, pn.cedula, cm.fechaconsul FROM consultamedica cm INNER JOIN paciente p ON cm.pacienteid = p.id_paciente INNER JOIN datospersonales dp ON p.dpersonalesid = dp.id_dpersonales INNER JOIN persona pn ON dp.personaid = pn.id_persona');
-      res.json(rows);
+    const result = await pool.query(`
+        SELECT 
+            cm.id_conmed,
+            cm.codconsul, 
+            pn_paciente.nombres AS nombres_paciente,
+            pn_paciente.apellidos AS apellidos_paciente, 
+            pn_paciente.cedula AS cedula_paciente,
+            dp_paciente.correo AS correo_paciente,
+            dp_paciente.telefono AS telefono_paciente,
+            cm.fechaconsul,
+            pn_medico.nombres AS nombres_medico,
+            pn_medico.apellidos AS apellidos_medico,
+            pn_medico.cedula AS cedula_medico,
+            cm.fechaingreso AS fecha_ingreso,
+            cm.diagnostic AS diagnostic,
+            cm.tratment AS tratment
+        FROM consultamedica cm 
+            INNER JOIN paciente p ON cm.pacienteid = p.id_paciente 
+            INNER JOIN datospersonales dp_paciente ON p.dpersonalesid = dp_paciente.id_dpersonales 
+            INNER JOIN persona pn_paciente ON dp_paciente.personaid = pn_paciente.id_persona
+            INNER JOIN usuarios u ON cm.medicoid = u.id_usuario
+            INNER JOIN persona pn_medico ON u.id_persona = pn_medico.id_persona
+        WHERE cm.id_conmed = $1;
+    `, [id_conmed]);
+
+    if (result.rows.length > 0) {
+        res.json(result.rows[0]);
+    } else {
+        res.json({});
+    }
   } catch (err) {
       console.error(err);
       res.status(501).send('Error al obtener los datos');
   }
 });
+
+app.get('/api/consultasMedicas', async (req, res) => {
+    try {
+      const { rows } = await pool.query(`
+          SELECT 
+              cm.id_conmed,
+              cm.codconsul, 
+              pn_paciente.nombres AS nombres_paciente,
+              pn_paciente.apellidos AS apellidos_paciente, 
+              pn_paciente.cedula AS cedula_paciente,
+              dp_paciente.correo AS correo_paciente,
+              dp_paciente.telefono AS telefono_paciente,
+              cm.fechaconsul,
+              pn_medico.nombres AS nombres_medico,
+              pn_medico.apellidos AS apellidos_medico,
+              pn_medico.cedula AS cedula_medico,
+              cm.fechaingreso AS fecha_ingreso,
+              cm.diagnostic AS diagnostic,
+              cm.tratment AS tratment
+          FROM consultamedica cm 
+              INNER JOIN paciente p ON cm.pacienteid = p.id_paciente 
+              INNER JOIN datospersonales dp_paciente ON p.dpersonalesid = dp_paciente.id_dpersonales 
+              INNER JOIN persona pn_paciente ON dp_paciente.personaid = pn_paciente.id_persona
+              INNER JOIN usuarios u ON cm.medicoid = u.id_usuario
+              INNER JOIN persona pn_medico ON u.id_persona = pn_medico.id_persona;
+      `);
+        res.json(rows);
+    } catch (err) {
+        console.error(err);
+        res.status(501).send('Error al obtener los datos');
+    }
+  });
 
 app.get('/api/color_ger/:codger', async (req, res) => {
   const { codger } = req.params;

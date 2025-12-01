@@ -32,7 +32,7 @@ import Footer from "examples/Footer";
 import DataTable from "examples/Tables/DataTable";
 // import Carnet from "examples/Cards/Carnet";
 
-import RegConsultas from "examples/Modals/Consultas/RegConsulta";
+import InfoCita from "examples/Modals/Citas/InfoCita";
 
 // Data
 import authorsTableData from "layouts/tables/data/authorsTableData";
@@ -40,20 +40,27 @@ import projectsTableData from "layouts/tables/data/projectsTableData";
 
 function Citas() {
   const [show, setShow] = useState(false);
-  const [consultas, setConsultas] = useState([]);
+  const [citas, setCitas] = useState([]);
+  const [getId, setGetId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const handleClose = () => setShow(false);
-  const handleShow = () => setShow(true);
+  const handleCloseCita = () => {
+    setShow(false);
+    setGetId(null);
+  };
+  const handleShowCita = (a) => {
+    setGetId(a);
+    setShow(true);
+  };
   let i = 1;
   const API_Host = process.env.REACT_APP_API_URL;
 
-  const fetchConsultas = async () => {
+  const fetchCitas = async () => {
     try {
       setLoading(true);
       setError(null);
       const response = await axios.get(`${API_Host}/api/consultasMedicas`);
-      setConsultas(response.data);
+      setCitas(response.data);
     } catch (err) {
       console.log("Error al obtener Consultas", err);
       setError("Error al cargar las Consultas. Intentelo de nuevo.", err.message);
@@ -62,26 +69,49 @@ function Citas() {
     }
   };
 
+  const formatDate = (dateString) => {
+    if (!dateString) return "Fecha no disponible";
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString("es-ES", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      });
+    } catch (error) {
+      return "Fecha inválida";
+    }
+  };
+
   useEffect(() => {
-    fetchConsultas();
+    fetchCitas();
   }, []);
 
   const columns = [
-    { Header: "ID", accessor: "id_conmed", width: "10%" },
-    { Header: "Nombres", accessor: "nombres", width: "20%" },
-    { Header: "Apellidos", accessor: "apellidos", width: "20%" },
-    { Header: "Cédula", accessor: "cedula", width: "15%" },
+    { Header: "ID", accessor: "id_citas", width: "10%" },
+    { Header: "Paciente", accessor: "nombresP", width: "20%" },
+    // { Header: "Cedula Paciente", accessor: "cedulaP", width: "20%" },
+    { Header: "Medico", accessor: "nombresM", width: "20%" },
+    { Header: "Cédula Medico", accessor: "cedula_medico", width: "15%" },
+    { Header: "Fecha de Cita", accessor: "fecha_cita", width: "15%" },
     { Header: "Acciones", accessor: "actions", width: "15%" },
   ];
 
-  const rows = consultas.map((consulta) => ({
-    id_consulta: i++,
-    nombres: consulta.nombres,
-    apellidos: consulta.apellidos,
-    cedula: consulta.cedula,
+  const rows = citas.map((cita) => ({
+    id_citas: i++,
+    nombresP: cita.nombres_paciente + " " + cita.apellidos_paciente + " - V" + cita.cedula_paciente,
+    // cedulaP: cita.cedula_paciente,
+    nombresM: cita.nombres_medico + " " + cita.apellidos_medico,
+    cedula_medico: cita.cedula_medico,
+    fecha_cita: formatDate(cita.fechaconsul) || "09/08/2025",
     actions: (
       <MDBox display="flex" gap={1}>
-        <MDButton variant="text" color="info" size="small">
+        <MDButton
+          onClick={() => handleShowCita(cita.id_conmed)}
+          variant="text"
+          color="info"
+          size="large"
+        >
           <Icon>info</Icon>&nbsp;
         </MDButton>
         {/* <MDButton variant="text" color="error" size="small">
@@ -134,6 +164,14 @@ function Citas() {
                   Citas Medicas
                 </MDTypography>
               </MDBox>
+              <MDBox>
+                <InfoCita
+                  close={handleCloseCita}
+                  show={show}
+                  fetch={fetchCitas}
+                  id_conmed={getId}
+                />
+              </MDBox>
               <MDBox pt={3}>
                 {loading ? (
                   <MDBox p={3} textAlign="center">
@@ -146,11 +184,11 @@ function Citas() {
                     <MDTypography variant="body2" color="error">
                       {error}
                     </MDTypography>
-                    <MDButton color="info" onClick={fetchConsultas} sx={{ mt: 2 }}>
+                    <MDButton color="info" onClick={fetchCitas} sx={{ mt: 2 }}>
                       <Icon>refresh</Icon>&nbsp;Reintentar
                     </MDButton>
                   </MDBox>
-                ) : consultas.length === 0 ? (
+                ) : citas.length === 0 ? (
                   <MDBox p={3} textAlign="center">
                     <MDTypography variant="body2" color="text">
                       No hay citas registradas

@@ -62,33 +62,52 @@ function Consultas() {
     }
   };
 
+  const formatDate = (dateString) => {
+    if (!dateString) return "Fecha no disponible";
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString("es-ES", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      });
+    } catch (error) {
+      return "Fecha inválida";
+    }
+  };
+
   useEffect(() => {
     fetchConsultas();
   }, []);
 
   const columns = [
-    { Header: "ID", accessor: "id_conmed", width: "10%" },
-    { Header: "Nombres", accessor: "nombres", width: "20%" },
-    { Header: "Apellidos", accessor: "apellidos", width: "20%" },
-    { Header: "Cédula", accessor: "cedula", width: "15%" },
-    { Header: "Acciones", accessor: "actions", width: "15%" },
+    { Header: "ID", accessor: "id_consulta", width: "5%" },
+    { Header: "Paciente", accessor: "nombresP", width: "15%" },
+    { Header: "Cedula Paciente", accessor: "cedulaP", width: "15%" },
+    { Header: "Medico", accessor: "nombresM", width: "20%" },
+    { Header: "Cédula Medico", accessor: "cedulaM", width: "15%" },
+    { Header: "Fecha de Consulta", accessor: "fecha_cita", width: "15%" },
+    { Header: "Diagnostico", accessor: "diagnostic", width: "15%" },
   ];
 
   const rows = consultas.map((consulta) => ({
     id_consulta: i++,
-    nombres: consulta.nombres,
-    apellidos: consulta.apellidos,
-    cedula: consulta.cedula,
-    actions: (
-      <MDBox display="flex" gap={1}>
-        <MDButton variant="text" color="info" size="small">
-          <Icon>info</Icon>&nbsp;
-        </MDButton>
-        {/* <MDButton variant="text" color="error" size="small">
-          <Icon>delete</Icon>&nbsp;Eliminar
-        </MDButton> */}
-      </MDBox>
-    ),
+    nombresP: consulta.nombres_paciente + " " + consulta.apellidos_paciente,
+    cedulaP: consulta.cedula_paciente,
+    nombresM: consulta.nombres_medico + " " + consulta.nombres_medico,
+    cedulaM: consulta.cedula_medico,
+    fecha_cita: formatDate(consulta.fechaconsul) || "09/08/2025",
+    diagnostic: consulta.diagnostic,
+    // actions: (
+    //   <MDBox display="flex" gap={1}>
+    //     <MDButton variant="text" color="info" size="large">
+    //       <Icon>info</Icon>&nbsp;
+    //     </MDButton>
+    //     {/* <MDButton variant="text" color="error" size="small">
+    //       <Icon>delete</Icon>&nbsp;Eliminar
+    //     </MDButton> */}
+    //   </MDBox>
+    // ),
   }));
 
   return (
