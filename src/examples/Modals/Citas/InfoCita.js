@@ -37,6 +37,7 @@ function InfoCita({ show, close, fetch, id_conmed }) {
   const [getId, setGetId] = useState(null);
   const API_Host = process.env.REACT_APP_API_URL;
   const [formData, setFormData] = useState({
+    id_conmed: "",
     codconsul: "",
     nombres_paciente: "",
     apellidos_paciente: "",
@@ -49,6 +50,10 @@ function InfoCita({ show, close, fetch, id_conmed }) {
     cedula_medico: "",
     diagnostic: "",
     tratment: "",
+    diagnostico_avance: "",
+    tiempo_tratamiento: "",
+    fecha_avance: "",
+    estado_paciente: "",
   });
   const formatDate = (dateString) => {
     if (!dateString) return "Fecha no disponible";
@@ -101,6 +106,7 @@ function InfoCita({ show, close, fetch, id_conmed }) {
           draggable: true,
         });
         fetch();
+        setIsAdvance(false);
       }
     } catch (error) {
       Swal.fire({
@@ -110,7 +116,14 @@ function InfoCita({ show, close, fetch, id_conmed }) {
         draggable: true,
       });
     }
-    setIsAdvance(false);
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
   const handleCancel = () => {
@@ -130,6 +143,7 @@ function InfoCita({ show, close, fetch, id_conmed }) {
       // console.log(citaData);
       // Mapear los datos de la API al estado del formulario
       setFormData({
+        id_conmed: id,
         codconsul: citaData.codconsul,
         nombres_paciente: citaData.nombres_paciente,
         apellidos_paciente: citaData.apellidos_paciente,
@@ -403,7 +417,8 @@ function InfoCita({ show, close, fetch, id_conmed }) {
                     <MDInput
                       label="Diagnostico"
                       name="diagnostico_avance"
-                      value={formData.cedula_medico || ""}
+                      onChange={handleChange}
+                      value={formData.diagnostico_avance}
                       fullWidth
                     />
                   </Grid>
@@ -411,7 +426,8 @@ function InfoCita({ show, close, fetch, id_conmed }) {
                     <MDInput
                       label="Tiempo de Tratamiento"
                       name="tiempo_tratamiento"
-                      value={formData.cedula_medico || ""}
+                      value={formData.tiempo_tratamiento}
+                      onChange={handleChange}
                       fullWidth
                     />
                   </Grid>
@@ -419,18 +435,22 @@ function InfoCita({ show, close, fetch, id_conmed }) {
                     <MDInput
                       label="Proxima Cita"
                       name="fecha_avance"
-                      value={formData.nombres_medico || ""}
+                      type="date"
+                      value={formData.fecha_avance}
+                      onChange={handleChange}
+                      min={new Date().toISOString().split("T")[0]}
                       fullWidth
                     />
                   </Grid>
                   {/* Ocupación */}
                   <Grid item xs={12} sm={4}>
-                    <Form.Group className="mb-3" controlId="tipoCed.ControlSelect1">
+                    <Form.Group className="mb-3" controlId="estadoPaciente.ControlSelect1">
                       <Form.Label>Estado del Paciente</Form.Label>
                       <Form.Select
                         aria-label="Seleccionar estado"
-                        value={formData.medicoid || ""}
-                        name="medicoid"
+                        value={formData.estado_paciente}
+                        onChange={handleChange}
+                        name="estado_paciente"
                         required
                       >
                         <option value="" disabled>

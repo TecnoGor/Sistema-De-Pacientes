@@ -280,12 +280,12 @@ app.post('/api/regConsultas', async (req, res) => {
 });
 
 app.post('/api/regAdvanceConsul', async (req, res) => {
-    const { id_conmed, tiempo_tratamiento, fecha_avance, estado_paciente, diagnostico } = req.body;
+    const { id_conmed, tiempo_tratamiento, fecha_avance, estado_paciente, diagnostico_avance } = req.body;
 
     try {
         const result = await pool.query(
             'INSERT INTO avance_consultas (id_conmed, tiempo_tratamiento, fecha_avance, estado_paciente, diagnostico) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-            [id_conmed, tiempo_tratamiento, fecha_avance, estado_paciente, diagnostico]
+            [id_conmed, tiempo_tratamiento, fecha_avance, estado_paciente, diagnostico_avance]
         );
         res.status(201).json({
             success: true,
