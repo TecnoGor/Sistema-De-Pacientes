@@ -262,7 +262,7 @@ app.post('/api/regConsultas', async (req, res) => {
     const medvint= parseInt(medicoid);
     try {
         const result = await pool.query(
-            'INSERT INTO consultamedica (pacienteid, codconsul, motivo, diagnostic, tratment, medicoid, fechaconsul, status) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+            'INSERT INTO consultamedica (pacienteid, codconsul, motivo, diagnostic, tratment, medicoid, fechaconsul, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
             [pacienteId, codconsul, motivo, diagnostic, tratment, medvint, fechaConsul, status]
         );
         res.status(201).json({

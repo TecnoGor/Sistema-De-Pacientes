@@ -50,6 +50,7 @@ function DataTable({
   isSorted,
   noEndBorder,
   showFilters,
+  defaultToday,
 }) {
   const defaultValue = entriesPerPage.defaultValue ? entriesPerPage.defaultValue : 10;
   const entries = entriesPerPage.entries
@@ -68,35 +69,98 @@ function DataTable({
     setMedicos(medicosUnicos);
   }, [data]);
 
+  useEffect(() => {
+    if (defaultToday && !fechaDesde && !fechaHasta) {
+      const today = new Date();
+      const todayStr = dateToYYYYMMDD(today);
+      setFechaDesde(todayStr);
+      setFechaHasta(todayStr);
+    }
+  }, [defaultToday, fechaDesde, fechaHasta]);
+
+  const normalizeDate = (dateString) => {
+    if (!dateString) return null;
+
+    try {
+      // Si ya es una fecha en formato YYYY-MM-DD
+      if (typeof dateString === "string" && dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        return new Date(dateString);
+      }
+
+      // Si viene con hora (formato ISO)
+      const date = new Date(dateString);
+      // Crear nueva fecha sin horas/minutos/segundos
+      return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    } catch (error) {
+      console.error("Error normalizando fecha: ", dateString, error);
+      return null;
+    }
+  };
+
+  // Función para convertir Date a YYYY-MM-DD
+  const dateToYYYYMMDD = (date) => {
+    if (!date) return "";
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
   // Filtrar datos basados en los filtros
   const filteredData = useMemo(() => {
+    if (!data || !Array.isArray(data)) return [];
+
     return data.filter((item) => {
-      // Filtro por médico
+      // Filtro por médic
       if (medicoSeleccionado && item.nombresM !== medicoSeleccionado) {
         return false;
       }
 
-      // Filtro por fecha
-      if (fechaDesde || fechaHasta) {
-        const fechaCita = new Date(item.fecha_cita);
-        if (fechaDesde && fechaCita < new Date(fechaDesde)) {
+      // Si no hay filtros de fecha, incluir todo
+      if (!fechaDesde && !fechaHasta) {
+        return true;
+      }
+
+      // Normalizar la fecha de la cita
+      const fechaCitaNormalizada = normalizeDate(item.fecha_cita);
+      if (!fechaCitaNormalizada) return false;
+
+      // Convertir filtros a objetos Date normalizados
+      const desdeNormalizado = fechaDesde ? normalizeDate(fechaDesde) : null;
+      const hastaNormalizado = fechaHasta ? normalizeDate(fechaHasta) : null;
+
+      // Si hay fecha desde y la cita es anterior
+      if (desdeNormalizado && fechaCitaNormalizada < desdeNormalizado) {
+        return false;
+      }
+
+      // Si hay fecha hasta y la cita es posterior
+      if (hastaNormalizado) {
+        // Asegurarse de comparar solo la fecha (sin hora)
+        const hastaNormalizadoEndOfDay = new Date(hastaNormalizado);
+        hastaNormalizadoEndOfDay.setHours(23, 59, 59, 999);
+
+        if (fechaCitaNormalizada > hastaNormalizadoEndOfDay) {
           return false;
         }
-        if (fechaHasta) {
-          const fechaHastaObj = new Date(fechaHasta);
-          fechaHastaObj.setHours(23, 59, 59, 999); // Incluir todo el día
-          if (fechaCita > fechaHastaObj) {
-            return false;
-          }
-        }
       }
+
       return true;
     });
   }, [data, medicoSeleccionado, fechaDesde, fechaHasta]);
 
   const limpiarFiltros = () => {
-    setFechaDesde("");
-    setFechaHasta("");
+    if (defaultToday) {
+      // Si está configurado para mostrar hoy por defecto, volver a hoy
+      const today = new Date();
+      const todayStr = dateToYYYYMMDD(today);
+      setFechaDesde(todayStr);
+      setFechaHasta(todayStr);
+    } else {
+      // Si no, limpiar completamente
+      setFechaDesde("");
+      setFechaHasta("");
+    }
     setMedicoSeleccionado("");
   };
 
@@ -214,6 +278,41 @@ function DataTable({
             alignItems="center"
           >
             {/* Filtro por Médico */}
+            <MDButton
+              variant={
+                fechaDesde &&
+                fechaHasta &&
+                fechaDesde === dateToYYYYMMDD(new Date()) &&
+                fechaHasta === dateToYYYYMMDD(new Date())
+                  ? "contained"
+                  : "outlined"
+              }
+              color="info"
+              onClick={() => {
+                const today = new Date();
+                const todayStr = dateToYYYYMMDD(today);
+                setFechaDesde(todayStr);
+                setFechaHasta(todayStr);
+              }}
+              size="small"
+            >
+              <Icon>today</Icon>
+              &nbsp;Hoy
+            </MDButton>
+
+            <MDButton
+              variant={!fechaDesde && !fechaHasta ? "contained" : "outlined"}
+              color="info"
+              onClick={() => {
+                setFechaDesde("");
+                setFechaHasta("");
+              }}
+              size="small"
+            >
+              <Icon>calendar_view_month</Icon>
+              &nbsp;Todas
+            </MDButton>
+
             <MDBox width="15rem">
               <Autocomplete
                 options={medicos}
@@ -396,6 +495,7 @@ DataTable.defaultProps = {
   isSorted: true,
   noEndBorder: false,
   showFilters: false,
+  defaultToday: false,
 };
 
 // Typechecking props for the DataTable
@@ -426,6 +526,7 @@ DataTable.propTypes = {
   isSorted: PropTypes.bool,
   noEndBorder: PropTypes.bool,
   showFilters: PropTypes.bool,
+  defaultToday: PropTypes.bool,
 };
 
 export default DataTable;

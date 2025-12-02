@@ -103,7 +103,9 @@ function Citas() {
     // cedulaP: cita.cedula_paciente,
     nombresM: cita.nombres_medico + " " + cita.apellidos_medico,
     cedula_medico: cita.cedula_medico,
-    fecha_cita: formatDate(cita.fechaconsul) || "09/08/2025",
+    fecha_cita: formatDate(cita.fechaconsul)
+      ? new Date(cita.fechaconsul).toISOString().split("T")[0]
+      : new Date().toISOString().split("T")[0],
     actions: (
       <MDBox display="flex" gap={1}>
         <MDButton
@@ -200,6 +202,8 @@ function Citas() {
                     isSorted={true}
                     entriesPerPage={true}
                     showTotalEntries={true}
+                    showFilters={true}
+                    defaultToday={true} // ← Esta prop mostrará solo las citas de hoy
                     noEndBorder
                     pagination={{ variant: "gradient", color: "info" }}
                   />
