@@ -301,6 +301,38 @@ app.post('/api/regAdvanceConsul', async (req, res) => {
     }
 });
 
+app.post('/api/regRol', async (req, res) => {
+    const { nrol, status, descript } = req.body;
+
+    try {
+        const result = await pool.query(
+            'INSERT INTO avance_consultas (nrol, status, descript) VALUES ($1, $2, $3) RETURNING *',
+            [nrol, status, descript]
+        );
+        res.status(201).json({
+            success: true,
+            message: "Rol registrado exitosamente",
+            data: result.rows[0]
+        })
+    } catch (err) {
+        console.error('Error al obtener:', err);
+        res.status(500).json({
+            success: false,
+            error: err.message
+        });
+    }
+});
+
+app.get('/api/roles', async (req, res) => {
+    try {
+        const { rows } = await pool.query('SELECT id_rol, nrol, status, descript FROM roles');
+        res.json(rows);
+    } catch (err) {
+        console.error(err);
+        res.status(501).send('Error al obtener los roles');
+    }
+});
+
 // Ruta para iniciar sesión
 app.post('/login', async (req, res) => {
     const { username, password } = req.body;
@@ -435,10 +467,12 @@ app.get('/api/consultasMedicas', async (req, res) => {
               cm.fechaconsul,
               pn_medico.nombres AS nombres_medico,
               pn_medico.apellidos AS apellidos_medico,
+              pn_medico.tipoci AS tipoci_medico,
               pn_medico.cedula AS cedula_medico,
               cm.fechaingreso AS fecha_ingreso,
               cm.diagnostic AS diagnostic,
-              cm.tratment AS tratment
+              cm.tratment AS tratment,
+              cm.status AS status
           FROM consultamedica cm 
               INNER JOIN paciente p ON cm.pacienteid = p.id_paciente 
               INNER JOIN datospersonales dp_paciente ON p.dpersonalesid = dp_paciente.id_dpersonales 

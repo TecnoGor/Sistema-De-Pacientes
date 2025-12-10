@@ -69,7 +69,7 @@ function Citas() {
     }
   };
 
-  const formatDate = (dateString) => {
+  const formatDateForDisplay = (dateString) => {
     if (!dateString) return "Fecha no disponible";
     try {
       const date = new Date(dateString);
@@ -83,6 +83,81 @@ function Citas() {
     }
   };
 
+  // Función para convertir a formato YYYY-MM-DD (para filtros)
+  const formatDateForFilter = (dateString) => {
+    if (!dateString) return new Date().toISOString().split("T")[0];
+    try {
+      const date = new Date(dateString);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    } catch (error) {
+      return new Date().toISOString().split("T")[0];
+    }
+  };
+
+  const getStatusBadge = (status) => {
+    if (status === 1 || status === "1" || status === true) {
+      return (
+        <MDBox
+          display="inline-flex"
+          alignItems="center"
+          px={2}
+          py={0.5}
+          borderRadius="md"
+          sx={{
+            backgroundColor: "success.main",
+            color: "white",
+            fontSize: "0.75rem",
+            fontWeight: "bold",
+          }}
+        >
+          <Icon sx={{ fontSize: "0.875rem", mr: 0.5 }}>check_circle</Icon>
+          Activo
+        </MDBox>
+      );
+    } else if (status === 0 || status === "0" || status === false) {
+      return (
+        <MDBox
+          display="inline-flex"
+          alignItems="center"
+          px={2}
+          py={0.5}
+          borderRadius="md"
+          sx={{
+            backgroundColor: "error.main",
+            color: "white",
+            fontSize: "0.75rem",
+            fontWeight: "bold",
+          }}
+        >
+          <Icon sx={{ fontSize: "0.875rem", mr: 0.5 }}>cancel</Icon>
+          Inactivo
+        </MDBox>
+      );
+    }
+
+    return (
+      <MDBox
+        display="inline-flex"
+        alignItems="center"
+        px={2}
+        py={0.5}
+        borderRadius="md"
+        sx={{
+          backgroundColor: "warning.main",
+          color: "white",
+          fontSize: "0.75rem",
+          fontWeight: "bold",
+        }}
+      >
+        <Icon sx={{ fontSize: "0.875rem", mr: 0.5 }}>help</Icon>
+        Desconocido
+      </MDBox>
+    );
+  };
+
   useEffect(() => {
     fetchCitas();
   }, []);
@@ -90,22 +165,37 @@ function Citas() {
   const columns = [
     { Header: "ID", accessor: "id_citas", width: "10%" },
     { Header: "Paciente", accessor: "nombresP", width: "20%" },
-    // { Header: "Cedula Paciente", accessor: "cedulaP", width: "20%" },
-    { Header: "Medico", accessor: "nombresM", width: "20%" },
-    { Header: "Cédula Medico", accessor: "cedula_medico", width: "15%" },
-    { Header: "Fecha de Cita", accessor: "fecha_cita", width: "15%" },
+    { Header: "Médico", accessor: "nombresM", width: "20%" },
+    {
+      Header: "Status",
+      accessor: "status",
+      width: "20%",
+      Cell: ({ value }) => getStatusBadge(value),
+    },
+    {
+      Header: "Fecha de Cita",
+      accessor: "fecha_cita",
+      width: "15%",
+      Cell: ({ value, row }) => row.original._fechaDisplay || value,
+    },
     { Header: "Acciones", accessor: "actions", width: "15%" },
   ];
 
   const rows = citas.map((cita) => ({
     id_citas: i++,
-    nombresP: cita.nombres_paciente + " " + cita.apellidos_paciente + " - V" + cita.cedula_paciente,
+    nombresP:
+      cita.nombres_paciente + " " + cita.apellidos_paciente + " - V-" + cita.cedula_paciente,
     // cedulaP: cita.cedula_paciente,
-    nombresM: cita.nombres_medico + " " + cita.apellidos_medico,
-    cedula_medico: cita.cedula_medico,
-    fecha_cita: formatDate(cita.fechaconsul)
-      ? new Date(cita.fechaconsul).toISOString().split("T")[0]
-      : new Date().toISOString().split("T")[0],
+    nombresM:
+      cita.nombres_medico +
+      " " +
+      cita.apellidos_medico +
+      " - " +
+      cita.tipoci_medico +
+      "-" +
+      cita.cedula_medico,
+    status: cita.status,
+    fecha_cita: formatDateForFilter(cita.fechaconsul),
     actions: (
       <MDBox display="flex" gap={1}>
         <MDButton

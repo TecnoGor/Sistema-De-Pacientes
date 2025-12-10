@@ -63,9 +63,23 @@ function Users() {
     }
   };
 
+  const formatDateForDisplay = (dateString) => {
+    if (!dateString) return "Fecha no disponible";
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString("es-ES", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      });
+    } catch (error) {
+      return "Fecha inválida";
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
-  });
+  }, []);
 
   const columns = [
     { Header: "ID", accessor: "id_usuario", width: "10%" },
@@ -79,7 +93,7 @@ function Users() {
     id_usuario: i++,
     nuser: user.nuser,
     rol: user.nrol,
-    fechacreacion: user.fechacreacion,
+    fechacreacion: formatDateForDisplay(user.fechacreacion),
     actions: (
       <MDBox display="flex" gap={1}>
         <MDButton variant="text" color="info" size="small">

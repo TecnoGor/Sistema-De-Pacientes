@@ -14,12 +14,16 @@ Coded by www.creative-tim.com
 */
 
 // @mui material components
+import { useEffect, useState } from "react";
 import Grid from "@mui/material/Grid";
 import Card from "@mui/material/Card";
+import Icon from "@mui/material/Icon";
+import axios from "axios";
 
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
+import MDButton from "components/MDButton";
 
 // Material Dashboard 2 React example components
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
@@ -33,8 +37,139 @@ import authorsTableData from "layouts/tables/data/authorsTableData";
 import projectsTableData from "layouts/tables/data/projectsTableData";
 
 function Roles() {
-  const { columns, rows } = authorsTableData();
-  const { columns: pColumns, rows: pRows } = projectsTableData();
+  const [show, setShow] = useState(false);
+  const [roles, setRoles] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const handleClose = () => setShow(false);
+  let i = 1;
+  const handleShow = () => setShow(true);
+  // const { columns, rows } = authorsTableData();
+  // const { columns: pColumns, rows: pRows } = projectsTableData();
+  const API_Host = process.env.REACT_APP_API_URL;
+
+  const fetchRoles = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await axios.get(`${API_Host}/api/roles`);
+      setRoles(response.data);
+    } catch (error) {
+      // console.log("Error al cargar los pacientes: ", error);
+      setError("Error al cargar los roles. Intentelo de nuevo. ", error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDateForDisplay = (dateString) => {
+    if (!dateString) return "Fecha no disponible";
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString("es-ES", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      });
+    } catch (error) {
+      return "Fecha inválida";
+    }
+  };
+
+  const getStatusBadge = (status) => {
+    if (status === 1 || status === "1" || status === true) {
+      return (
+        <MDBox
+          display="inline-flex"
+          alignItems="center"
+          px={2}
+          py={0.5}
+          borderRadius="md"
+          sx={{
+            backgroundColor: "success.main",
+            color: "white",
+            fontSize: "0.75rem",
+            fontWeight: "bold",
+          }}
+        >
+          <Icon sx={{ fontSize: "0.875rem", mr: 0.5 }}>check_circle</Icon>
+          Activo
+        </MDBox>
+      );
+    } else if (status === 0 || status === "0" || status === false) {
+      return (
+        <MDBox
+          display="inline-flex"
+          alignItems="center"
+          px={2}
+          py={0.5}
+          borderRadius="md"
+          sx={{
+            backgroundColor: "error.main",
+            color: "white",
+            fontSize: "0.75rem",
+            fontWeight: "bold",
+          }}
+        >
+          <Icon sx={{ fontSize: "0.875rem", mr: 0.5 }}>cancel</Icon>
+          Inactivo
+        </MDBox>
+      );
+    }
+
+    return (
+      <MDBox
+        display="inline-flex"
+        alignItems="center"
+        px={2}
+        py={0.5}
+        borderRadius="md"
+        sx={{
+          backgroundColor: "warning.main",
+          color: "white",
+          fontSize: "0.75rem",
+          fontWeight: "bold",
+        }}
+      >
+        <Icon sx={{ fontSize: "0.875rem", mr: 0.5 }}>help</Icon>
+        Desconocido
+      </MDBox>
+    );
+  };
+
+  useEffect(() => {
+    fetchRoles();
+  }, []);
+
+  const columns = [
+    { Header: "ID", accessor: "id_rol", width: "10%" },
+    { Header: "Nombre de Rol", accessor: "nrol", width: "20%" },
+    {
+      Header: "Status",
+      accessor: "status",
+      width: "20%",
+      Cell: ({ value }) => getStatusBadge(value),
+    },
+    { Header: "Descripcion de Rol", accessor: "descript", width: "15%" },
+    { Header: "Acciones", accessor: "actions", width: "15%" },
+  ];
+
+  const rows = roles.map((rol) => ({
+    id_rol: i++,
+    nrol: rol.nrol,
+    status: rol.status,
+    descript: rol.descript,
+    actions: (
+      <MDBox display="flex" gap={1}>
+        <MDButton variant="text" color="info" size="small">
+          <Icon>edit</Icon>&nbsp;Editar
+        </MDButton>
+        {/* <MDButton variant="text" color="error" size="small">
+          <Icon>delete</Icon>&nbsp;Eliminar
+        </MDButton> */}
+      </MDBox>
+    ),
+  }));
 
   return (
     <DashboardLayout>
@@ -80,12 +215,47 @@ function Roles() {
                 borderRadius="lg"
                 coloredShadow="info"
               >
-                <MDTypography variant="h6" color="white">
-                  Roles
-                </MDTypography>
+                <MDButton variant="gradient" color="dark" onClick={handleShow}>
+                  <Icon sx={{ fontWeight: "bold" }}>person</Icon>
+                  &nbsp;Registrar Usuarios
+                </MDButton>
               </MDBox>
               <MDBox pt={3}>
+                {/* <RegUsuarios close={handleClose} show={show} fetch={fetchUsers} /> */}
                 {/* <Carnet number={4562112245947852} holder="jack peterson" expires="11/22" /> */}
+              </MDBox>
+              <MDBox pt={3}>
+                {loading ? (
+                  <MDBox p={3} textAlign="center">
+                    <MDTypography variant="body2" color="text">
+                      Cargando usuarios...
+                    </MDTypography>
+                  </MDBox>
+                ) : error ? (
+                  <MDBox p={3} textAlign="center">
+                    <MDTypography variant="body2" color="error">
+                      {error}
+                    </MDTypography>
+                    <MDButton color="info" onClick={fetchRoles} sx={{ mt: 2 }}>
+                      <Icon>refresh</Icon>&nbsp;Reintentar
+                    </MDButton>
+                  </MDBox>
+                ) : roles.length === 0 ? (
+                  <MDBox p={3} textAlign="center">
+                    <MDTypography variant="body2" color="text">
+                      No hay usuarios registrados
+                    </MDTypography>
+                  </MDBox>
+                ) : (
+                  <DataTable
+                    table={{ columns, rows }}
+                    isSorted={true}
+                    entriesPerPage={true}
+                    showTotalEntries={true}
+                    noEndBorder
+                    pagination={{ variant: "gradient", color: "info" }}
+                  />
+                )}
               </MDBox>
             </Card>
           </Grid>

@@ -305,7 +305,6 @@ function DataTable({
               color="info"
               onClick={() => {
                 setFechaDesde("");
-                setFechaHasta("");
               }}
               size="small"
             >
