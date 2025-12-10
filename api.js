@@ -216,6 +216,27 @@ app.post('/api/regDatosPersonales', async (req, res) => {
     }
 });
 
+app.post('/api/updateConsulta', async (req, res) => {
+    const { id_conmed } = req.body;
+
+    try {
+        const result = await pool.query(
+            'UPDATE consultamedica SET status = false WHERE id_conmed = $1',
+            [id_conmed]
+        );
+
+        res.status(201).json({
+            success: true,
+            message: 'Consulta Inhabilitada',
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            error: err.message,
+        });
+    }
+});
+
 app.get('/api/medicos', async (req, res) => {
     try {
         const result = await pool.query(
@@ -413,6 +434,48 @@ app.get('/api/especialistas', async (req, res) => {
   }
 });
 
+app.get('/api/avancesConsultas/:id_conmed', async (req, res) => {
+    const { id_conmed } = req.params;
+    try {
+      const { rows } = await pool.query(`
+          SELECT 
+              cm.id_conmed,
+              cm.codconsul, 
+              pn_paciente.nombres AS nombres_paciente,
+              pn_paciente.apellidos AS apellidos_paciente, 
+              pn_paciente.cedula AS cedula_paciente,
+              dp_paciente.correo AS correo_paciente,
+              dp_paciente.telefono AS telefono_paciente,
+              cm.fechaconsul,
+              pn_medico.nombres AS nombres_medico,
+              pn_medico.apellidos AS apellidos_medico,
+              pn_medico.tipoci AS tipoci_medico,
+              pn_medico.cedula AS cedula_medico,
+              cm.fechaingreso AS fecha_ingreso,
+              cm.diagnostic AS diagnostic,
+              cm.tratment AS tratment,
+              cm.status AS status,
+              acm.tiempo_tratamiento,
+              acm.fecha_avance AS fecha_avance,
+              acm.estado_paciente AS estado_paciente,
+              acm.diagnostico AS diagnostico_avance,
+              acm.fecha_registro AS fecha_registro
+          FROM consultamedica cm 
+              INNER JOIN paciente p ON cm.pacienteid = p.id_paciente 
+              INNER JOIN datospersonales dp_paciente ON p.dpersonalesid = dp_paciente.id_dpersonales 
+              INNER JOIN persona pn_paciente ON dp_paciente.personaid = pn_paciente.id_persona
+              INNER JOIN usuarios u ON cm.medicoid = u.id_usuario
+              INNER JOIN persona pn_medico ON u.id_persona = pn_medico.id_persona
+              LEFT JOIN avance_consultas acm ON acm.id_conmed = cm.id_conmed
+          WHERE cm.id_conmed = $1;
+      `, [id_conmed]);
+        res.json(rows);
+    } catch (err) {
+        console.error(err);
+        res.status(501).send('Error al obtener los datos');
+    }
+});
+
 app.get('/api/consultaMedica/:id_conmed', async (req, res) => {
     const { id_conmed } = req.params;
 
@@ -432,7 +495,8 @@ app.get('/api/consultaMedica/:id_conmed', async (req, res) => {
             pn_medico.cedula AS cedula_medico,
             cm.fechaingreso AS fecha_ingreso,
             cm.diagnostic AS diagnostic,
-            cm.tratment AS tratment
+            cm.tratment AS tratment,
+            cm.status AS status
         FROM consultamedica cm 
             INNER JOIN paciente p ON cm.pacienteid = p.id_paciente 
             INNER JOIN datospersonales dp_paciente ON p.dpersonalesid = dp_paciente.id_dpersonales 

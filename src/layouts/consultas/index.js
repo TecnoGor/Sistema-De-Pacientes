@@ -82,6 +82,7 @@ function Consultas() {
 
   const columns = [
     { Header: "ID", accessor: "id_consulta", width: "5%" },
+    { Header: "Codigo de Consulta", accessor: "codConsul", width: "5%" },
     { Header: "Paciente", accessor: "nombresP", width: "15%" },
     { Header: "Cedula Paciente", accessor: "cedulaP", width: "15%" },
     { Header: "Medico", accessor: "nombresM", width: "20%" },
@@ -92,6 +93,7 @@ function Consultas() {
 
   const rows = consultas.map((consulta) => ({
     id_consulta: i++,
+    codConsul: consulta.codconsul,
     nombresP: consulta.nombres_paciente + " " + consulta.apellidos_paciente,
     cedulaP: consulta.cedula_paciente,
     nombresM: consulta.nombres_medico + " " + consulta.nombres_medico,

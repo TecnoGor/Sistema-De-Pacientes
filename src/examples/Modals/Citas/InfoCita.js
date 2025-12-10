@@ -21,17 +21,29 @@ import MDTypography from "components/MDTypography";
 import MDInput from "components/MDInput";
 import MDButton from "components/MDButton";
 import Icon from "@mui/material/Icon";
+import NotInterestedIcon from "@mui/icons-material/NotInterested";
 // import Button from "react-bootstrap/Button";
 import Modal from "react-bootstrap/Modal";
 import axios from "axios";
 import Swal from "sweetalert2";
+import InfoAvances from "./InfoAvances";
 import { CircularProgress } from "@mui/material";
 
 function InfoCita({ show, close, fetch, id_conmed }) {
   const id = id_conmed;
   const [showInfo, setShowInfo] = useState(false);
+  const [getIdConmed, setGetIdConmed] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isAdvance, setIsAdvance] = useState(false);
+  const [showAvances, setShowAvances] = useState(false);
+  const handleCloseAvances = () => {
+    setShowAvances(false);
+    setGetIdConmed(null);
+  };
+  const handleShowAvances = (a) => {
+    setGetIdConmed(a);
+    setShowAvances(true);
+  };
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [getId, setGetId] = useState(null);
@@ -54,6 +66,7 @@ function InfoCita({ show, close, fetch, id_conmed }) {
     tiempo_tratamiento: "",
     fecha_avance: "",
     estado_paciente: "",
+    status_consulta: false,
   });
   const formatDate = (dateString) => {
     if (!dateString) return "Fecha no disponible";
@@ -91,6 +104,34 @@ function InfoCita({ show, close, fetch, id_conmed }) {
     setIsAdvance(true);
   };
 
+  const handleDisabled = async () => {
+    console.log("Desabilitando cita: ", formData.codconsul);
+
+    if (formData.status_consulta) {
+      try {
+        const responseUpdate = await axios.post(`${API_Host}/api/updateConsulta`, formData, {
+          headers: { "Content-Type": "application/json" },
+        });
+        if (responseUpdate.status === 201) {
+          Swal.fire({
+            title: "Consulta Inhabilitada!",
+            text: "Consulta inhabilitada con exito.",
+            icon: "info",
+            draggable: true,
+          });
+          fetch();
+        }
+      } catch (error) {
+        Swal.fire({
+          title: "Error al inhabilitar la consulta.",
+          text: error.message,
+          icon: "error",
+          draggable: true,
+        });
+      }
+    }
+  };
+
   const handleSave = async () => {
     // Aquí puedes agregar la lógica para guardar los cambios
     console.log("Guardando cambios...", formData);
@@ -100,8 +141,8 @@ function InfoCita({ show, close, fetch, id_conmed }) {
       });
       if (result.status === 201) {
         Swal.fire({
-          title: "Consulta Registrada!",
-          text: "Consulta Agendada con exito.",
+          title: "Avance de Consulta Registrado!",
+          text: "Cita Agendada con exito.",
           icon: "success",
           draggable: true,
         });
@@ -156,6 +197,7 @@ function InfoCita({ show, close, fetch, id_conmed }) {
         cedula_medico: citaData.cedula_medico,
         diagnostic: citaData.diagnostic,
         tratment: citaData.tratment,
+        status_consulta: citaData.status,
       });
       console.log(formData);
     } catch (err) {
@@ -195,14 +237,51 @@ function InfoCita({ show, close, fetch, id_conmed }) {
           {/* Botón de Edición */}
           <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 3 }}>
             {!isAdvance ? (
-              <MDButton
-                variant="gradient"
-                color="info"
-                onClick={toggleAdvance}
-                startIcon={<Icon>edit</Icon>}
-              >
-                Registrar Avance
-              </MDButton>
+              <>
+                {!formData.status_consulta ? (
+                  <>
+                    <MDButton
+                      variant="gradient"
+                      color="info"
+                      onClick={toggleAdvance}
+                      startIcon={<Icon>edit</Icon>}
+                      disabled
+                    >
+                      Registrar Avance
+                    </MDButton>
+                    &nbsp;
+                  </>
+                ) : (
+                  <>
+                    <MDButton
+                      variant="gradient"
+                      color="info"
+                      onClick={() => handleShowAvances(formData.id_conmed)}
+                      startIcon={<Icon>visibility</Icon>}
+                    >
+                      Mostrar Avances
+                    </MDButton>
+                    &nbsp;&nbsp;
+                    <MDButton
+                      variant="gradient"
+                      color="info"
+                      onClick={toggleAdvance}
+                      startIcon={<Icon>edit</Icon>}
+                    >
+                      Registrar Avance
+                    </MDButton>
+                    &nbsp;&nbsp;
+                    <MDButton
+                      variant="gradient"
+                      color="error"
+                      onClick={handleDisabled}
+                      startIcon={<NotInterestedIcon />}
+                    >
+                      Finalizar Consulta
+                    </MDButton>
+                  </>
+                )}
+              </>
             ) : (
               <Box sx={{ display: "flex", gap: 1 }}>
                 <MDButton
@@ -417,6 +496,7 @@ function InfoCita({ show, close, fetch, id_conmed }) {
                     <MDInput
                       label="Diagnostico"
                       name="diagnostico_avance"
+                      type="text"
                       onChange={handleChange}
                       value={formData.diagnostico_avance}
                       fullWidth
@@ -426,6 +506,7 @@ function InfoCita({ show, close, fetch, id_conmed }) {
                     <MDInput
                       label="Tiempo de Tratamiento"
                       name="tiempo_tratamiento"
+                      type="text"
                       value={formData.tiempo_tratamiento}
                       onChange={handleChange}
                       fullWidth
@@ -465,6 +546,7 @@ function InfoCita({ show, close, fetch, id_conmed }) {
                   </Grid>
                 </Grid>
               </CardContent>
+              <InfoAvances close={handleCloseAvances} show={showAvances} id_conmed={getIdConmed} />
             </Card>
           )}
         </MDBox>
