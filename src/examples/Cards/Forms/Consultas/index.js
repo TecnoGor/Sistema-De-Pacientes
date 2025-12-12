@@ -130,12 +130,12 @@ function ConsultaForm({ formDataConsulta, handleChange }) {
       <Row>
         <Col>
           <Form.Group className="mb-3" controlId="apellidos.ControlInput3">
-            <Form.Label>Diagnostico</Form.Label>
+            <Form.Label>Cantidad de Sesiones</Form.Label>
             <Form.Control
-              type="text"
-              placeholder="Describa el diagnostico"
-              value={formDataConsulta.diagnostic || ""}
-              name="diagnostic"
+              type="number"
+              placeholder="Cantidad de sesiones"
+              value={formDataConsulta.sesiones || ""}
+              name="sesiones"
               onChange={handleChange}
             />
           </Form.Group>

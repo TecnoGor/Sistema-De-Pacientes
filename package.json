@@ -29,6 +29,7 @@
     "cors": "^2.8.5",
     "craco": "^0.0.3",
     "crypto": "^1.0.1",
+    "docx-templates": "^4.15.0",
     "dotenv": "^17.2.1",
     "express": "^4.21.2",
     "fs": "^0.0.1-security",

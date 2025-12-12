@@ -35,15 +35,6 @@ function InfoCita({ show, close, fetch, id_conmed }) {
   const [getIdConmed, setGetIdConmed] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isAdvance, setIsAdvance] = useState(false);
-  const [showAvances, setShowAvances] = useState(false);
-  const handleCloseAvances = () => {
-    setShowAvances(false);
-    setGetIdConmed(null);
-  };
-  const handleShowAvances = (a) => {
-    setGetIdConmed(a);
-    setShowAvances(true);
-  };
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [getId, setGetId] = useState(null);
@@ -67,6 +58,20 @@ function InfoCita({ show, close, fetch, id_conmed }) {
     fecha_avance: "",
     estado_paciente: "",
     status_consulta: false,
+    protocolo: "",
+    tiempo_protocolo: "",
+    parterial_before: "",
+    estatura_before: "",
+    peso_before: "",
+    saturacion_before: "",
+    pulso_before: "",
+    frespiratoria_before: "",
+    parterial_after: "",
+    estatura_after: "",
+    peso_after: "",
+    saturacion_after: "",
+    pulso_after: "",
+    frespiratoria_after: "",
   });
   const formatDate = (dateString) => {
     if (!dateString) return "Fecha no disponible";
@@ -256,19 +261,10 @@ function InfoCita({ show, close, fetch, id_conmed }) {
                     <MDButton
                       variant="gradient"
                       color="info"
-                      onClick={() => handleShowAvances(formData.id_conmed)}
-                      startIcon={<Icon>visibility</Icon>}
-                    >
-                      Mostrar Avances
-                    </MDButton>
-                    &nbsp;&nbsp;
-                    <MDButton
-                      variant="gradient"
-                      color="info"
                       onClick={toggleAdvance}
-                      startIcon={<Icon>edit</Icon>}
+                      startIcon={<Icon>dataset</Icon>}
                     >
-                      Registrar Avance
+                      Registrar Sesion
                     </MDButton>
                     &nbsp;&nbsp;
                     <MDButton
@@ -487,32 +483,52 @@ function InfoCita({ show, close, fetch, id_conmed }) {
             <Card sx={{ mb: 3 }}>
               <CardContent>
                 <MDTypography variant="h6" gutterBottom color="primary">
-                  Registrar Avance / Finalizar
+                  Registrar Sesion
                 </MDTypography>
 
                 <Grid container spacing={3}>
                   {/* Estudios */}
                   <Grid item xs={12} sm={4}>
-                    <MDInput
-                      label="Diagnostico"
-                      name="diagnostico_avance"
-                      type="text"
-                      onChange={handleChange}
-                      value={formData.diagnostico_avance}
-                      fullWidth
-                    />
+                    <Form.Group className="mb-3" controlId="estadoPaciente.ControlSelect1">
+                      <Form.Label style={{ fontSize: "1rem" }}>Protocolo ATA</Form.Label>
+                      <Form.Select
+                        aria-label="Seleccionar protocolo"
+                        value={formData.protocolo}
+                        onChange={handleChange}
+                        name="protocolo"
+                        required
+                      >
+                        <option value="" disabled>
+                          Seleccione...
+                        </option>
+                        <option value="1,5 ATA's"> 1,5 ATA </option>
+                        <option value="1,7 ATA's"> 1,7 ATA </option>
+                        <option value="2 ATA's"> 2 ATA </option>
+                      </Form.Select>
+                    </Form.Group>
                   </Grid>
                   <Grid item xs={12} sm={4}>
-                    <MDInput
-                      label="Tiempo de Tratamiento"
-                      name="tiempo_tratamiento"
-                      type="text"
-                      value={formData.tiempo_tratamiento}
-                      onChange={handleChange}
-                      fullWidth
-                    />
+                    <Form.Group className="mb-3" controlId="estadoPaciente.ControlSelect1">
+                      <Form.Label style={{ fontSize: "1rem" }}>Tiempo de Tratamiento</Form.Label>
+                      <Form.Select
+                        aria-label="Seleccionar protocolo"
+                        value={formData.tiempo_tratamiento}
+                        onChange={handleChange}
+                        name="tiempo_tratamiento"
+                        required
+                      >
+                        <option value="" disabled>
+                          Seleccione...
+                        </option>
+                        <option value="45 min"> 45 min </option>
+                        <option value="60 min"> 60 min </option>
+                        <option value="90 min"> 90 min </option>
+                        <option value="120 min"> 120 min </option>
+                      </Form.Select>
+                    </Form.Group>
                   </Grid>
                   <Grid item xs={12} sm={4}>
+                    <MDTypography style={{ fontSize: "1rem" }}>Proxima Cita</MDTypography>
                     <MDInput
                       label="Proxima Cita"
                       name="fecha_avance"
@@ -523,30 +539,138 @@ function InfoCita({ show, close, fetch, id_conmed }) {
                       fullWidth
                     />
                   </Grid>
-                  {/* Ocupación */}
+                  <Grid item xs={12} sm={12}>
+                    <MDTypography variant="h6" gutterBottom color="primary">
+                      Signos Vitales Antes de la Sesion
+                    </MDTypography>
+                  </Grid>
                   <Grid item xs={12} sm={4}>
-                    <Form.Group className="mb-3" controlId="estadoPaciente.ControlSelect1">
-                      <Form.Label>Estado del Paciente</Form.Label>
-                      <Form.Select
-                        aria-label="Seleccionar estado"
-                        value={formData.estado_paciente}
-                        onChange={handleChange}
-                        name="estado_paciente"
-                        required
-                      >
-                        <option value="" disabled>
-                          Seleccione...
-                        </option>
-                        <option value="Curado"> Curado </option>
-                        <option value="En proceso de Mejora"> En proceso de Mejora </option>
-                        <option value="Empeoro"> Empeoro </option>
-                        <option value="Estado Critico"> Estado Critico </option>
-                      </Form.Select>
-                    </Form.Group>
+                    <MDInput
+                      label="Presion Arterial"
+                      name="parterial_before"
+                      type="text"
+                      onChange={handleChange}
+                      value={formData.parterial_before}
+                      fullWidth
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <MDInput
+                      label="Estatura Cm"
+                      name="estatura_before"
+                      type="number"
+                      value={formData.estatura_before}
+                      onChange={handleChange}
+                      fullWidth
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <MDInput
+                      label="Peso Kg"
+                      name="peso_before"
+                      type="number"
+                      value={formData.peso_before}
+                      onChange={handleChange}
+                      fullWidth
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <MDInput
+                      label="Saturacion de Oxigeno"
+                      name="saturacion_before"
+                      type="number"
+                      onChange={handleChange}
+                      value={formData.saturacion_before}
+                      fullWidth
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <MDInput
+                      label="Pulso / min"
+                      name="pulso_before"
+                      type="text"
+                      value={formData.pulso_before}
+                      onChange={handleChange}
+                      fullWidth
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <MDInput
+                      label="Frecuencia Respiratoria"
+                      name="frespiratoria_before"
+                      type="text"
+                      value={formData.frespiratoria_before}
+                      onChange={handleChange}
+                      fullWidth
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={12}>
+                    <MDTypography variant="h6" gutterBottom color="primary">
+                      Signos Vitales Despues de la Sesion
+                    </MDTypography>
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <MDInput
+                      label="Presion Arterial"
+                      name="parterial_before"
+                      type="text"
+                      onChange={handleChange}
+                      value={formData.parterial_after}
+                      fullWidth
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <MDInput
+                      label="Estatura Cm"
+                      name="estatura_before"
+                      type="number"
+                      value={formData.estatura_after}
+                      onChange={handleChange}
+                      fullWidth
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <MDInput
+                      label="Peso Kg"
+                      name="peso_before"
+                      type="number"
+                      value={formData.peso_after}
+                      onChange={handleChange}
+                      fullWidth
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <MDInput
+                      label="Saturacion de Oxigeno"
+                      name="saturacion_before"
+                      type="number"
+                      onChange={handleChange}
+                      value={formData.saturacion_after}
+                      fullWidth
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <MDInput
+                      label="Pulso / min"
+                      name="pulso_before"
+                      type="text"
+                      value={formData.pulso_after}
+                      onChange={handleChange}
+                      fullWidth
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <MDInput
+                      label="Frecuencia Respiratoria"
+                      name="frespiratoria_before"
+                      type="text"
+                      value={formData.frespiratoria_after}
+                      onChange={handleChange}
+                      fullWidth
+                    />
                   </Grid>
                 </Grid>
               </CardContent>
-              <InfoAvances close={handleCloseAvances} show={showAvances} id_conmed={getIdConmed} />
             </Card>
           )}
         </MDBox>

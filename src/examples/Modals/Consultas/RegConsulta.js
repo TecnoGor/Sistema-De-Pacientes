@@ -20,6 +20,7 @@ function RegConsultas({ close, show, fetch }) {
     fechaConsul: "",
     motivo: "",
     diagnostic: "",
+    sesiones: "",
     tratment: "",
     medicoid: "",
     status: true,
@@ -138,6 +139,9 @@ function RegConsultas({ close, show, fetch }) {
         <ConsultaForm formDataConsulta={formDataConsultas} handleChange={handleChange} />
       </Modal.Body>
       <Modal.Footer>
+        <Button variant="success" onClick={regConsultas}>
+          Examen Fisico
+        </Button>
         <Button variant="primary" onClick={regConsultas}>
           Registrar Consulta
         </Button>

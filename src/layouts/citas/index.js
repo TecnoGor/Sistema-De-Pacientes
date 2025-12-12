@@ -33,6 +33,7 @@ import DataTable from "examples/Tables/DataTable";
 // import Carnet from "examples/Cards/Carnet";
 
 import InfoCita from "examples/Modals/Citas/InfoCita";
+import InfoAvances from "examples/Modals/Citas/InfoAvances";
 
 // Data
 import authorsTableData from "layouts/tables/data/authorsTableData";
@@ -44,6 +45,15 @@ function Citas() {
   const [getId, setGetId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showAvances, setShowAvances] = useState(false);
+  const handleCloseAvances = () => {
+    setShowAvances(false);
+    setGetId(null);
+  };
+  const handleShowAvances = (a) => {
+    setGetId(a);
+    setShowAvances(true);
+  };
   const handleCloseCita = () => {
     setShow(false);
     setGetId(null);
@@ -206,6 +216,14 @@ function Citas() {
         >
           <Icon>info</Icon>&nbsp;
         </MDButton>
+        <MDButton
+          onClick={() => handleShowAvances(cita.id_conmed)}
+          variant="text"
+          color="info"
+          size="large"
+        >
+          <Icon>visibility</Icon>&nbsp;
+        </MDButton>
         {/* <MDButton variant="text" color="error" size="small">
           <Icon>delete</Icon>&nbsp;Eliminar
         </MDButton> */}
@@ -257,6 +275,7 @@ function Citas() {
                 </MDTypography>
               </MDBox>
               <MDBox>
+                <InfoAvances close={handleCloseAvances} show={showAvances} id_conmed={getId} />
                 <InfoCita
                   close={handleCloseCita}
                   show={show}

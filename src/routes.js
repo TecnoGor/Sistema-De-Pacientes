@@ -36,7 +36,7 @@ const routes = [
   },
   {
     type: "collapse",
-    name: "Consultas Medicas",
+    name: "Consultas Médicas",
     key: "consultas",
     icon: <Icon fontSize="small">medication</Icon>,
     route: "/consultas",
@@ -44,7 +44,7 @@ const routes = [
   },
   {
     type: "collapse",
-    name: "Citas Medicas",
+    name: "Atención Médica",
     key: "citas",
     icon: <Icon fontSize="small">event</Icon>,
     route: "/citas",
