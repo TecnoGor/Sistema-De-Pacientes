@@ -88,7 +88,7 @@ function Consultas() {
     { Header: "Medico", accessor: "nombresM", width: "20%" },
     { Header: "Cédula Medico", accessor: "cedulaM", width: "15%" },
     { Header: "Fecha de Consulta", accessor: "fecha_cita", width: "15%" },
-    { Header: "Diagnostico", accessor: "diagnostic", width: "15%" },
+    { Header: "Sesiones", accessor: "sesiones", width: "15%" },
   ];
 
   const rows = consultas.map((consulta) => ({
@@ -99,7 +99,7 @@ function Consultas() {
     nombresM: consulta.nombres_medico + " " + consulta.nombres_medico,
     cedulaM: consulta.cedula_medico,
     fecha_cita: formatDate(consulta.fechaconsul) || "09/08/2025",
-    diagnostic: consulta.diagnostic,
+    sesiones: consulta.sesiones,
     // actions: (
     //   <MDBox display="flex" gap={1}>
     //     <MDButton variant="text" color="info" size="large">

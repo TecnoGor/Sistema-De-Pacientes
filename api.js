@@ -279,12 +279,12 @@ app.post('/api/regPacientes', upload.single('referencia'), async (req, res) => {
 });
 
 app.post('/api/regConsultas', async (req, res) => {
-    const { ci, pacienteId, firstname, lastname, codconsul, fechaConsul, motivo, diagnostic, tratment, medicoid, status } = req.body;
+    const { ci, pacienteId, firstname, lastname, codconsul, fechaConsul, motivo, sesiones, tratment, medicoid, status } = req.body;
     const medvint= parseInt(medicoid);
     try {
         const result = await pool.query(
-            'INSERT INTO consultamedica (pacienteid, codconsul, motivo, diagnostic, tratment, medicoid, fechaconsul, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
-            [pacienteId, codconsul, motivo, diagnostic, tratment, medvint, fechaConsul, status]
+            'INSERT INTO consultamedica (pacienteid, codconsul, motivo, cant_sesions, tratment, medicoid, fechaconsul, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
+            [pacienteId, codconsul, motivo, sesiones, tratment, medvint, fechaConsul, status]
         );
         res.status(201).json({
             success: true,
@@ -311,6 +311,60 @@ app.post('/api/regAdvanceConsul', async (req, res) => {
         res.status(201).json({
             success: true,
             message: "Avance registrado exitosamente",
+            data: result.rows[0]
+        })
+    } catch (err) {
+        console.error('Error al obtener:', err);
+        res.status(500).json({
+            success: false,
+            error: err.message
+        });
+    }
+});
+
+app.post('/api/regSesion', async (req, res) => {
+    const { id_conmed,
+        fecha_avance,
+        protocolo,
+        tiempo_protocolo,
+        parterial_before,
+        estatura_before,
+        peso_before,
+        saturacion_before,
+        pulso_before,
+        frespiratoria_before,
+        estatura_after,
+        parterial_after,
+        peso_after,
+        saturacion_after,
+        pulso_after,
+        frespiratoria_after } = req.body;
+
+    try {
+        const result = await pool.query(
+            `INSERT INTO sesiones
+                (id_conmed,
+                protocolo,
+                tiempo_protocolo,
+                proxima_sesion,
+                parterial_before,
+                estatura_before,
+                peso_before,
+                saturacion_before,
+                pulso_before,
+                frespiratoria_before,
+                parterial_after,
+                estatura_after,
+                peso_after,
+                saturacion_after,
+                pulso_after,
+                frespiratoria_after)
+	        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING *`,
+            [id_conmed, protocolo, tiempo_protocolo, fecha_avance, parterial_before, estatura_before, peso_before, saturacion_before, pulso_before, frespiratoria_before, parterial_after, estatura_after, peso_after, saturacion_after, pulso_after, frespiratoria_after]
+        );
+        res.status(201).json({
+            success: true,
+            message: "Sesion registrada exitosamente",
             data: result.rows[0]
         })
     } catch (err) {
@@ -476,6 +530,59 @@ app.get('/api/avancesConsultas/:id_conmed', async (req, res) => {
     }
 });
 
+app.get('/api/sesiones/:id_conmed', async (req, res) => {
+    const { id_conmed } = req.params;
+    try {
+      const { rows } = await pool.query(`
+          SELECT 
+              cm.id_conmed,
+              cm.codconsul, 
+              pn_paciente.nombres AS nombres_paciente,
+              pn_paciente.apellidos AS apellidos_paciente, 
+              pn_paciente.cedula AS cedula_paciente,
+              dp_paciente.correo AS correo_paciente,
+              dp_paciente.telefono AS telefono_paciente,
+              cm.fechaconsul,
+              pn_medico.nombres AS nombres_medico,
+              pn_medico.apellidos AS apellidos_medico,
+              pn_medico.tipoci AS tipoci_medico,
+              pn_medico.cedula AS cedula_medico,
+              cm.fechaingreso AS fecha_ingreso,
+              cm.cant_sesions AS sesiones,
+              cm.tratment AS tratment,
+              cm.status AS status,
+              ses.protocolo AS protocolo,
+			  ses.tiempo_protocolo AS tiempo_protocolo,
+			  ses.proxima_sesion AS proxima_sesion,
+			  ses.parterial_before AS parterial_before,
+			  ses.estatura_before AS estatura_before,
+			  ses.peso_before AS peso_before,
+			  ses.saturacion_before AS saturacion_before,
+			  ses.pulso_before AS pulso_before,
+			  ses.frespiratoria_before AS frespiratoria_before,
+			  ses.parterial_after AS parterial_after,
+			  ses.estatura_after AS estatura_after,
+			  ses.peso_after AS peso_after,
+			  ses.saturacion_after AS saturacion_after,
+			  ses.pulso_after AS pulso_after,
+			  ses.frespiratoria_after AS frespiratoria_after,
+			  ses.fecha_sesion AS fecha_sesion
+          FROM consultamedica cm 
+              INNER JOIN paciente p ON cm.pacienteid = p.id_paciente 
+              INNER JOIN datospersonales dp_paciente ON p.dpersonalesid = dp_paciente.id_dpersonales 
+              INNER JOIN persona pn_paciente ON dp_paciente.personaid = pn_paciente.id_persona
+              INNER JOIN usuarios u ON cm.medicoid = u.id_usuario
+              INNER JOIN persona pn_medico ON u.id_persona = pn_medico.id_persona
+              LEFT JOIN sesiones ses ON ses.id_conmed = cm.id_conmed
+          WHERE cm.id_conmed = $1;
+      `, [id_conmed]);
+        res.json(rows);
+    } catch (err) {
+        console.error(err);
+        res.status(501).send('Error al obtener los datos');
+    }
+});
+
 app.get('/api/consultaMedica/:id_conmed', async (req, res) => {
     const { id_conmed } = req.params;
 
@@ -494,7 +601,7 @@ app.get('/api/consultaMedica/:id_conmed', async (req, res) => {
             pn_medico.apellidos AS apellidos_medico,
             pn_medico.cedula AS cedula_medico,
             cm.fechaingreso AS fecha_ingreso,
-            cm.diagnostic AS diagnostic,
+            cm.cant_sesions AS sesiones,
             cm.tratment AS tratment,
             cm.status AS status
         FROM consultamedica cm 
@@ -534,7 +641,7 @@ app.get('/api/consultasMedicas', async (req, res) => {
               pn_medico.tipoci AS tipoci_medico,
               pn_medico.cedula AS cedula_medico,
               cm.fechaingreso AS fecha_ingreso,
-              cm.diagnostic AS diagnostic,
+              cm.cant_sesions AS sesiones,
               cm.tratment AS tratment,
               cm.status AS status
           FROM consultamedica cm 

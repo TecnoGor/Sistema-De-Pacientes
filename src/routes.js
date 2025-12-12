@@ -45,9 +45,9 @@ const routes = [
   {
     type: "collapse",
     name: "Atención Médica",
-    key: "citas",
+    key: "atenciones",
     icon: <Icon fontSize="small">event</Icon>,
-    route: "/citas",
+    route: "/atenciones",
     component: <Citas />,
   },
   {

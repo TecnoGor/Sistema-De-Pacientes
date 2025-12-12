@@ -271,7 +271,7 @@ function Citas() {
                 coloredShadow="info"
               >
                 <MDTypography variant="h6" color="white">
-                  Citas Medicas
+                  Atenciones Médicas
                 </MDTypography>
               </MDBox>
               <MDBox>

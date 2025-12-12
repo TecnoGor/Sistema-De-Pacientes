@@ -88,7 +88,7 @@ function InfoAvances({ show, close, id_conmed }) {
       console.log(id_conmed);
       setLoading(true);
       setError(null);
-      const response = await axios.get(`${API_Host}/api/avancesConsultas/${id_conmed}`);
+      const response = await axios.get(`${API_Host}/api/sesiones/${id_conmed}`);
       setAvances(response.data);
       console.log(avances);
     } catch (err) {
@@ -130,7 +130,7 @@ function InfoAvances({ show, close, id_conmed }) {
       centered
     >
       <Modal.Header closeButton>
-        <Modal.Title id="contained-modal-title-vcenter">Datos de Cita</Modal.Title>
+        <Modal.Title id="contained-modal-title-vcenter">Datos de Sesion</Modal.Title>
       </Modal.Header>
       <Modal.Body>
         <MDBox>

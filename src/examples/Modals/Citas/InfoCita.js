@@ -141,12 +141,12 @@ function InfoCita({ show, close, fetch, id_conmed }) {
     // Aquí puedes agregar la lógica para guardar los cambios
     console.log("Guardando cambios...", formData);
     try {
-      const result = await axios.post(`${API_Host}/api/regAdvanceConsul`, formData, {
+      const result = await axios.post(`${API_Host}/api/regSesion`, formData, {
         headers: { "Content-Type": "application/json" },
       });
       if (result.status === 201) {
         Swal.fire({
-          title: "Avance de Consulta Registrado!",
+          title: "Sesión Registrada!",
           text: "Cita Agendada con exito.",
           icon: "success",
           draggable: true,
@@ -512,9 +512,9 @@ function InfoCita({ show, close, fetch, id_conmed }) {
                       <Form.Label style={{ fontSize: "1rem" }}>Tiempo de Tratamiento</Form.Label>
                       <Form.Select
                         aria-label="Seleccionar protocolo"
-                        value={formData.tiempo_tratamiento}
+                        value={formData.tiempo_protocolo}
                         onChange={handleChange}
-                        name="tiempo_tratamiento"
+                        name="tiempo_protocolo"
                         required
                       >
                         <option value="" disabled>
@@ -606,13 +606,13 @@ function InfoCita({ show, close, fetch, id_conmed }) {
                   </Grid>
                   <Grid item xs={12} sm={12}>
                     <MDTypography variant="h6" gutterBottom color="primary">
-                      Signos Vitales Despues de la Sesion
+                      Signos Vitales Después de la Sesión
                     </MDTypography>
                   </Grid>
                   <Grid item xs={12} sm={4}>
                     <MDInput
                       label="Presion Arterial"
-                      name="parterial_before"
+                      name="parterial_after"
                       type="text"
                       onChange={handleChange}
                       value={formData.parterial_after}
@@ -622,7 +622,7 @@ function InfoCita({ show, close, fetch, id_conmed }) {
                   <Grid item xs={12} sm={4}>
                     <MDInput
                       label="Estatura Cm"
-                      name="estatura_before"
+                      name="estatura_after"
                       type="number"
                       value={formData.estatura_after}
                       onChange={handleChange}
@@ -632,7 +632,7 @@ function InfoCita({ show, close, fetch, id_conmed }) {
                   <Grid item xs={12} sm={4}>
                     <MDInput
                       label="Peso Kg"
-                      name="peso_before"
+                      name="peso_after"
                       type="number"
                       value={formData.peso_after}
                       onChange={handleChange}
@@ -642,7 +642,7 @@ function InfoCita({ show, close, fetch, id_conmed }) {
                   <Grid item xs={12} sm={4}>
                     <MDInput
                       label="Saturacion de Oxigeno"
-                      name="saturacion_before"
+                      name="saturacion_after"
                       type="number"
                       onChange={handleChange}
                       value={formData.saturacion_after}
@@ -652,7 +652,7 @@ function InfoCita({ show, close, fetch, id_conmed }) {
                   <Grid item xs={12} sm={4}>
                     <MDInput
                       label="Pulso / min"
-                      name="pulso_before"
+                      name="pulso_after"
                       type="text"
                       value={formData.pulso_after}
                       onChange={handleChange}
@@ -662,7 +662,7 @@ function InfoCita({ show, close, fetch, id_conmed }) {
                   <Grid item xs={12} sm={4}>
                     <MDInput
                       label="Frecuencia Respiratoria"
-                      name="frespiratoria_before"
+                      name="frespiratoria_after"
                       type="text"
                       value={formData.frespiratoria_after}
                       onChange={handleChange}
