@@ -88,7 +88,7 @@ function InfoAvances({ show, close, id_conmed }) {
       console.log(id_conmed);
       setLoading(true);
       setError(null);
-      const response = await axios.get(`${API_Host}/api/sesiones/${id_conmed}`);
+      const response = await axios.get(`${API_Host}/api/sesiones/${id}`);
       setAvances(response.data);
       console.log(avances);
     } catch (err) {
@@ -105,20 +105,32 @@ function InfoAvances({ show, close, id_conmed }) {
 
   const columns = [
     { Header: "ID", accessor: "id_avances", width: "10%" },
-    { Header: "Tiempo de Tratamiento", accessor: "tiempo_tratamiento", width: "10%" },
-    { Header: "Proxima Cita", accessor: "fecha_avance", width: "20%" },
-    { Header: "Estado Actual", accessor: "estado_paciente", width: "20%" },
-    { Header: "Diagnostico", accessor: "diagnostico_avance", width: "15%" },
-    { Header: "Fecha de Avance", accessor: "fecha_registro", width: "15%" },
+    { Header: "Protocolo", accessor: "protocolo", width: "10%" },
+    { Header: "Tiempo de Protocolo", accessor: "tiempo_protocolo", width: "10%" },
+    { Header: "Proxima Sesion", accessor: "fecha_avance", width: "20%" },
+    { Header: "Presion Arterial Antes", accessor: "parterial_before", width: "15%" },
+    { Header: "Presion Arterial Despues", accessor: "parterial_after", width: "15%" },
+    { Header: "Fecha de Sesion", accessor: "fecha_registro", width: "15%" },
   ];
 
   const rows = avances.map((avance) => ({
     id_avances: i++,
-    tiempo_tratamiento: avance.tiempo_tratamiento,
-    fecha_avance: formatDateForDisplay(avance.fecha_avance),
-    estado_paciente: avance.estado_paciente,
-    diagnostico_avance: avance.diagnostico_avance,
-    fecha_registro: formatDateForDisplay(avance.fecha_registro),
+    protocolo: avance.protocolo,
+    tiempo_protocolo: avance.tiempo_protocolo,
+    fecha_avance: formatDateForDisplay(avance.proxima_sesion),
+    parterial_before: avance.parterial_before,
+    estatura_before: avance.estatura_before,
+    peso_before: avance.peso_before,
+    saturacion_before: avance.saturacion_before,
+    pulso_before: avance.pulso_before,
+    frespiratoria_before: avance.frespiratoria_before,
+    parterial_after: avance.parterial_after,
+    estatura_after: avance.estatura_after,
+    peso_after: avance.peso_after,
+    saturacion_after: avance.saturacion_after,
+    pulso_after: avance.pulso_after,
+    frespiratoria_after: avance.frespiratoria_after,
+    fecha_registro: formatDateForDisplay(avance.fecha_sesion),
   }));
 
   return (

@@ -133,7 +133,7 @@ function RegConsultas({ close, show, fetch }) {
   return (
     <Modal size="lg" show={show} onHide={close} backdrop="static" keyboard={false} centered>
       <Modal.Header closeButton>
-        <Modal.Title>Registrar - Programar Consulta</Modal.Title>
+        <Modal.Title>Registrar - Programar Preconsulta</Modal.Title>
       </Modal.Header>
       <Modal.Body>
         <ConsultaForm formDataConsulta={formDataConsultas} handleChange={handleChange} />

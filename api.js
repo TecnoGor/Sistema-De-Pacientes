@@ -567,7 +567,7 @@ app.get('/api/sesiones/:id_conmed', async (req, res) => {
 			  ses.pulso_after AS pulso_after,
 			  ses.frespiratoria_after AS frespiratoria_after,
 			  ses.fecha_sesion AS fecha_sesion
-          FROM consultamedica cm 
+          FROM consultamedica cm
               INNER JOIN paciente p ON cm.pacienteid = p.id_paciente 
               INNER JOIN datospersonales dp_paciente ON p.dpersonalesid = dp_paciente.id_dpersonales 
               INNER JOIN persona pn_paciente ON dp_paciente.personaid = pn_paciente.id_persona
@@ -576,7 +576,11 @@ app.get('/api/sesiones/:id_conmed', async (req, res) => {
               LEFT JOIN sesiones ses ON ses.id_conmed = cm.id_conmed
           WHERE cm.id_conmed = $1;
       `, [id_conmed]);
-        res.json(rows);
+        if (result.rows.length > 0) {
+            res.json(result.rows[0]);
+        } else {
+            res.json({});
+        }
     } catch (err) {
         console.error(err);
         res.status(501).send('Error al obtener los datos');
