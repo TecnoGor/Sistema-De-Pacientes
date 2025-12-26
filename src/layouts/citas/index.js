@@ -24,6 +24,7 @@ import axios from "axios";
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import MDButton from "components/MDButton";
+import RemoveCircleIcon from "@mui/icons-material/RemoveCircle";
 
 // Material Dashboard 2 React example components
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
@@ -31,6 +32,8 @@ import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
 import DataTable from "examples/Tables/DataTable";
 // import Carnet from "examples/Cards/Carnet";
+
+import Swal from "sweetalert2";
 
 import InfoCita from "examples/Modals/Citas/InfoCita";
 import InfoAvances from "examples/Modals/Citas/InfoAvances";
@@ -79,6 +82,22 @@ function Citas() {
     }
   };
 
+  const handleInasistencia = () => {
+    Swal.fire({
+      title: "Seguro que quieres anotar una inasistencia?",
+      showDenyButton: true,
+      showCancelButton: false,
+      confirmButtonText: "Si",
+      denyButtonText: `No`,
+    }).then((result) => {
+      if (result.isConfirmed) {
+        Swal.fire("Inasistencia registrada!", "", "success");
+      } else if (result.isDenied) {
+        Swal.fire("No se registro una inasistencia", "", "info");
+      }
+    });
+  };
+
   const formatDateForDisplay = (dateString) => {
     if (!dateString) return "Fecha no disponible";
     try {
@@ -104,6 +123,14 @@ function Citas() {
       return `${year}-${month}-${day}`;
     } catch (error) {
       return new Date().toISOString().split("T")[0];
+    }
+  };
+
+  const fechaMuestra = (dateUltSes, dateCon) => {
+    if (dateUltSes === null) {
+      return formatDateForFilter(dateCon);
+    } else {
+      return formatDateForFilter(dateUltSes);
     }
   };
 
@@ -205,7 +232,7 @@ function Citas() {
       "-" +
       cita.cedula_medico,
     status: cita.status,
-    fecha_cita: formatDateForFilter(cita.fechaconsul),
+    fecha_cita: fechaMuestra(cita.ultima_proxima_cita, cita.fechaconsul),
     actions: (
       <MDBox display="flex" gap={1}>
         <MDButton
@@ -214,7 +241,7 @@ function Citas() {
           color="info"
           size="large"
         >
-          <Icon>info</Icon>&nbsp;
+          <Icon>info</Icon>
         </MDButton>
         <MDButton
           onClick={() => handleShowAvances(cita.id_conmed)}
@@ -222,11 +249,15 @@ function Citas() {
           color="info"
           size="large"
         >
-          <Icon>visibility</Icon>&nbsp;
+          <Icon>visibility</Icon>
         </MDButton>
-        {/* <MDButton variant="text" color="error" size="small">
-          <Icon>delete</Icon>&nbsp;Eliminar
+        {/* <MDButton variant="text" color="danger" size="large">
+          <RemoveCircleIcon />
+          &nbsp;
         </MDButton> */}
+        <MDButton onClick={() => handleInasistencia()} variant="text" color="error" size="large">
+          <Icon>delete</Icon> Inasistencia
+        </MDButton>
       </MDBox>
     ),
   }));

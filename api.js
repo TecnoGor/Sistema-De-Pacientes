@@ -1,13 +1,19 @@
 const express = require('express');
+const router = express.Router();
 const fs = require('fs');
 const { Pool } = require('pg');
 const multer = require('multer');
 const path = require('path');
+const PizZip = require('pizzip');
 const crypto = require('crypto');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
+const Docxtemplater = require('docxtemplater');
+const PDFDocument = require('pdf-lib').PDFDocument;
+const puppeteer = require('puppeteer');
 require('dotenv').config({ path: '.env.development' });
+const mammoth = require('mammoth');
 
 const app = express();
 const port = process.env.REACT_APP_API_PORT;
@@ -35,6 +41,14 @@ const pool = new Pool({
     database: process.env.REACT_APP_DB_NAME,
     password: process.env.REACT_APP_DB_PASSWORD,
     port: process.env.REACT_APP_DB_PORT,
+});
+
+const folders = ['uploads/referencias', 'plantillas', 'temp'];
+folders.forEach(folder => {
+    const fullPath = path.join(__dirname, folder);
+    if (!fs.existsSync(fullPath)) {
+        fs.mkdirSync(fullPath, { recursive: true });
+    }
 });
 
 const storage = multer.diskStorage({
@@ -75,6 +89,504 @@ const upload = multer({
 // Función para encriptar la contraseña en SHA-256
 function hashPassword(password) {
     return crypto.createHash('sha256').update(password).digest('hex');
+}
+
+app.post('/api/generar-consentimiento/:id_persona', async (req, res) => {
+    console.log('🔔 ===== ENDPOINT LLAMADO =====');
+    console.log('📌 Método:', req.method);
+    console.log('📌 URL:', req.url);
+    console.log('📌 id_persona recibido:', req.params.id_persona);
+    
+    try {
+        const { id_persona } = req.params;
+        
+        // 1. Obtener datos del paciente por id_persona
+        console.log('📋 Buscando datos del paciente...');
+        const pacienteData = await obtenerDatosPacientePorId(id_persona);
+        console.log('✅ Datos del paciente encontrados:', {
+            nombres: pacienteData.nombres,
+            apellidos: pacienteData.apellidos,
+            cedula: pacienteData.cedula
+        });
+        
+        // 2. Preparar datos para la plantilla
+        const templateData = {
+            paciente_nombres: pacienteData.nombres || '',
+            paciente_apellidos: pacienteData.apellidos || '',
+            paciente_edad: calcularEdad(pacienteData.fechanac) || 'N/A',
+            paciente_cedula: pacienteData.cedula || '',
+            paciente_direccion: pacienteData.direccion || 'No especificada',
+            medico_nombres: 'MÉDICO TRATANTE',
+            medico_apellidos: '',
+            medico_registro: 'N/A',
+            diagnostico: 'Enfermedad que requiere oxigenoterapia hiperbárica',
+            protocolo: 'Protocolo estándar de oxigenoterapia hiperbárica',
+            aceptacion_si: '☑',
+            aceptacion_no: '☐',
+            fecha_hora: new Date().toLocaleString('es-VE', {
+                timeZone: 'America/Caracas',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            }),
+            medico_firma: 'MÉDICO TRATANTE'
+        };
+        
+        console.log('📄 Datos preparados para plantilla');
+        
+        // 3. Generar documento Word desde plantilla
+        console.log('🔄 Generando documento Word...');
+        const wordBuffer = await generarConsentimientoWord(templateData);
+        console.log('✅ Documento Word generado, tamaño:', wordBuffer.length, 'bytes');
+        
+        // 4. Enviar el documento Word directamente (sin convertir a PDF)
+        console.log('📤 Enviando documento Word al cliente...');
+        
+        // Nombre del archivo
+        const nombreArchivo = `consentimiento_${pacienteData.nombres}_${pacienteData.apellidos}.docx`;
+        const nombreSeguro = nombreArchivo.replace(/[^a-zA-Z0-9._-]/g, '_');
+        
+        // Configurar headers para descarga de Word
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+        res.setHeader('Content-Disposition', `attachment; filename="${nombreSeguro}"`);
+        res.setHeader('Content-Length', wordBuffer.length);
+        
+        res.send(wordBuffer);
+        console.log('✅ Documento Word enviado exitosamente:', nombreSeguro);
+        
+    } catch (error) {
+        console.error('❌ ===== ERROR EN ENDPOINT =====');
+        console.error('❌ Error:', error.message);
+        console.error('❌ Stack trace:', error.stack);
+        res.status(500).json({ 
+            error: 'Error al generar el consentimiento',
+            detalle: error.message 
+        });
+    }
+});
+
+async function obtenerDatosPacientePorId(id_persona) {
+    console.log('Buscando datos del paciente por ID:', id_persona);
+    
+    const query = `
+        SELECT 
+            p.id_persona,
+            p.nombres,
+            p.apellidos,
+            p.cedula,
+            p.tipoci,
+            dp.fechanac,
+            dp.direccion,
+            dp.correo,
+            dp.telefono,
+            dp.edocivil,
+            dp.nivinst,
+            dp.profesion
+        FROM persona p
+        LEFT JOIN datospersonales dp ON p.id_persona = dp.personaid
+        WHERE p.id_persona = $1
+    `;
+    
+    const result = await pool.query(query, [id_persona]);
+    
+    console.log('Resultados encontrados:', result.rows.length);
+    
+    if (result.rows.length === 0) {
+        throw new Error('Paciente no encontrado');
+    }
+    
+    return result.rows[0];
+}
+
+// Función para obtener datos para el consentimiento
+async function obtenerDatosParaConsentimiento(id_conmed) {
+    const query = `
+        SELECT 
+            cm.id_conmed,
+            cm.codconsul,
+            cm.tratment,
+            pn_paciente.nombres AS nombres_paciente,
+            pn_paciente.apellidos AS apellidos_paciente,
+            pn_paciente.cedula AS cedula_paciente,
+            dp_paciente.fechanac,
+            dp_paciente.direccion,
+            dp_paciente.correo AS correo_paciente,
+            dp_paciente.telefono AS telefono_paciente,
+            pn_medico.nombres AS nombres_medico,
+            pn_medico.apellidos AS apellidos_medico,
+            pn_medico.cedula AS cedula_medico,
+            cm.fechaconsul,
+            -- Obtener el último protocolo de sesiones
+            (
+                SELECT protocolo 
+                FROM sesiones 
+                WHERE id_conmed = cm.id_conmed 
+                ORDER BY fecha_sesion DESC 
+                LIMIT 1
+            ) AS protocolo
+            -- Obtener registro médico si existe (ajusta según tu schema)
+        FROM consultamedica cm 
+        INNER JOIN paciente p ON cm.pacienteid = p.id_paciente 
+        INNER JOIN datospersonales dp_paciente ON p.dpersonalesid = dp_paciente.id_dpersonales 
+        INNER JOIN persona pn_paciente ON dp_paciente.personaid = pn_paciente.id_persona
+        INNER JOIN usuarios u ON cm.medicoid = u.id_usuario
+        INNER JOIN persona pn_medico ON u.id_persona = pn_medico.id_persona
+        WHERE cm.id_conmed = $1
+    `;
+    
+    const result = await pool.query(query, [id_conmed]);
+    
+    if (result.rows.length === 0) {
+        throw new Error('Consulta no encontrada');
+    }
+    
+    return result.rows[0];
+}
+
+// Función para generar el documento Word del consentimiento
+async function generarConsentimientoWord(data) {
+    try {
+        const templatePath = path.join(__dirname, 'uploads', 'plantillas', 'consentimiento_informado.docx');
+        
+        console.log('📁 Buscando plantilla en:', templatePath);
+        console.log('📁 ¿Existe la plantilla?', fs.existsSync(templatePath));
+        
+        if (!fs.existsSync(templatePath)) {
+            throw new Error(`Plantilla no encontrada en: ${templatePath}`);
+        }
+        
+        // Leer el contenido de la plantilla como BUFFER (no como binary)
+        const content = fs.readFileSync(templatePath);
+        console.log('✅ Plantilla leída, tamaño:', content.length, 'bytes');
+        
+        // Usar PizZip correctamente
+        let zip;
+        try {
+            zip = new PizZip(content);
+            console.log('✅ Archivo ZIP descomprimido');
+        } catch (zipError) {
+            console.error('❌ Error al descomprimir el archivo:', zipError);
+            throw new Error('La plantilla no es un archivo .docx válido');
+        }
+        
+        // Inicializar docxtemplater
+        let doc;
+        try {
+            doc = new Docxtemplater(zip, {
+                paragraphLoop: true,
+                linebreaks: true,
+                nullGetter: () => ''
+            });
+            console.log('✅ Docxtemplater inicializado');
+        } catch (docError) {
+            console.error('❌ Error al inicializar docxtemplater:', docError);
+            throw new Error('Error al procesar la plantilla Word');
+        }
+        
+        // Renderizar con los datos
+        try {
+            console.log('📋 Renderizando con datos:', data);
+            doc.render(data);
+            console.log('✅ Plantilla renderizada correctamente');
+        } catch (renderError) {
+            console.error('❌ Error al renderizar:', renderError);
+            if (renderError.properties) {
+                console.error('❌ Detalles del error de renderizado:');
+                console.error('- Message:', renderError.properties.message);
+                console.error('- Explanation:', renderError.properties.explanation);
+                console.error('- File:', renderError.properties.file);
+                console.error('- Line:', renderError.properties.line);
+                console.error('- Column:', renderError.properties.column);
+            }
+            throw renderError;
+        }
+        
+        // Generar buffer con opciones específicas
+        let buffer;
+        try {
+            buffer = doc.getZip().generate({
+                type: 'nodebuffer',
+                compression: 'DEFLATE',
+                mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            });
+            console.log('✅ Buffer generado, tamaño:', buffer.length, 'bytes');
+        } catch (generateError) {
+            console.error('❌ Error al generar buffer:', generateError);
+            throw generateError;
+        }
+        
+        // Opcional: Guardar para depuración
+        const debugPath = path.join(__dirname, 'temp', `debug_${Date.now()}.docx`);
+        if (!fs.existsSync(path.dirname(debugPath))) {
+            fs.mkdirSync(path.dirname(debugPath), { recursive: true });
+        }
+        fs.writeFileSync(debugPath, buffer);
+        console.log('📁 Archivo de depuración guardado en:', debugPath);
+        
+        return buffer;
+        
+    } catch (error) {
+        console.error('❌ Error en generarConsentimientoWord:', error);
+        throw error;
+    }
+}
+
+// Función auxiliar para crear plantilla por defecto si no existe
+async function crearPlantillaPorDefecto(data) {
+    const templatePath = path.join(__dirname, 'plantillas', 'consentimiento_informado.docx');
+    
+    // Crear un documento Word simple con los placeholders
+    const simpleContent = `
+        CONSENTIMIENTO INFORMADO PARA OXIGENOTERAPIA HIPERBÁRICA
+        
+        1. Identificación del paciente/ representante legal.
+        
+        Nombres y Apellidos del paciente: {paciente_nombres} {paciente_apellidos}
+        edad: {paciente_edad} C.I:{paciente_cedula} 
+        dirección de domicilio: {paciente_direccion}.
+        
+        2. Información general y consentimiento:
+        
+        En mi calidad de paciente y en pleno uso de mis facultades mentales y de
+        mis derechos de salud, el Dr.{medico_nombres} {medico_apellidos}
+        con registro en MPPS:{medico_registro} del servicio de medicina
+        hiperbárica y subacuática, me ha informado en forma confidencial,
+        respetuosa, clara y comprensible el diagnostico de mi/ su enfermedad el cual
+        es:{diagnostico},
+        y de la necesidad de recibir oxigenoterapia hiperbárica en el servicio
+        de medicina hiperbárica y subacuática como parte del tratamiento
+        complementario a mi diagnostico establecido.
+        
+        Consiento de manera libre, voluntaria e informada en ser sometido (a) a
+        oxigenoterapia hiperbárica, que a continuación se detalla el protocolo a
+        emplear: {protocolo}.
+        
+        Se me ha explicado los beneficios que se esperan de la oxigenoterapia al
+        cual me someto...
+        
+        Lo cual ( SI) {aceptacion_si} o ( NO){aceptacion_no} acepto...
+        
+        Firma del paciente/ firma del tutor o familiar
+        
+        C.I: {paciente_cedula}
+        
+        Fecha y hora: {fecha_hora}
+        
+        Firma y sello del Médico: {medico_firma}
+    `;
+    
+    // Guardar como archivo temporal
+    fs.writeFileSync(templatePath, simpleContent);
+    
+    // Volver a llamar a la función principal
+    return await generarConsentimientoWord(data);
+}
+
+// Función para convertir Word a PDF
+async function convertirConsentimientoAPDF(wordBuffer) {
+    try {
+        // Convertir Word a HTML
+        const htmlContent = await convertirWordAHTMLConsentimiento(wordBuffer);
+        
+        // Generar PDF desde HTML
+        const pdfBuffer = await generarPDFDesdeHTMLConsentimiento(htmlContent);
+        
+        return pdfBuffer;
+        
+    } catch (error) {
+        console.error('Error en convertirConsentimientoAPDF:', error);
+        throw error;
+    }
+}
+
+// Convertir Word a HTML usando mammoth
+async function convertirWordAHTMLConsentimiento(wordBuffer) {
+    // Guardar temporalmente el buffer como archivo
+    const tempDir = path.join(__dirname, 'temp');
+    if (!fs.existsSync(tempDir)) {
+        fs.mkdirSync(tempDir, { recursive: true });
+    }
+    
+    const tempFilePath = path.join(tempDir, `temp_consentimiento_${Date.now()}.docx`);
+    
+    fs.writeFileSync(tempFilePath, wordBuffer);
+    
+    try {
+        // Convertir a HTML
+        const result = await mammoth.convertToHtml({ 
+            path: tempFilePath
+        });
+        
+        // Añadir estilos para mantener formato
+        const styledHTML = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <style>
+                    body {
+                        font-family: 'Times New Roman', Times, serif;
+                        font-size: 12pt;
+                        line-height: 1.5;
+                        margin: 2cm;
+                        color: #000000;
+                    }
+                    .title {
+                        text-align: center;
+                        font-weight: bold;
+                        font-size: 14pt;
+                        margin-bottom: 20px;
+                        text-decoration: underline;
+                    }
+                    .section-title {
+                        font-weight: bold;
+                        margin-top: 15px;
+                        margin-bottom: 10px;
+                    }
+                    .field {
+                        display: inline-block;
+                        min-width: 150px;
+                        font-weight: bold;
+                    }
+                    .underline {
+                        text-decoration: underline;
+                    }
+                    .signature-area {
+                        margin-top: 100px;
+                        padding-top: 20px;
+                    }
+                    .signature-line {
+                        border-top: 1px solid #000;
+                        width: 300px;
+                        margin-top: 50px;
+                    }
+                    @media print {
+                        body {
+                            margin: 1.5cm;
+                        }
+                        .page-break {
+                            page-break-after: always;
+                        }
+                    }
+                </style>
+            </head>
+            <body>
+                ${result.value}
+            </body>
+            </html>
+        `;
+        
+        return styledHTML;
+        
+    } finally {
+        // Limpiar archivo temporal
+        if (fs.existsSync(tempFilePath)) {
+            fs.unlinkSync(tempFilePath);
+        }
+    }
+}
+
+// Generar PDF desde HTML con Puppeteer
+async function generarPDFDesdeHTMLConsentimiento(htmlContent) {
+    let browser;
+    try {
+        browser = await puppeteer.launch({
+            headless: 'new',
+            args: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage'
+            ]
+        });
+        
+        const page = await browser.newPage();
+        
+        await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+        
+        const pdfBuffer = await page.pdf({
+            format: 'A4',
+            margin: {
+                top: '40px',
+                right: '40px',
+                bottom: '40px',
+                left: '40px'
+            },
+            printBackground: true,
+            displayHeaderFooter: false,
+            preferCSSPageSize: true
+        });
+        
+        await browser.close();
+        return pdfBuffer;
+        
+    } catch (error) {
+        if (browser) {
+            await browser.close();
+        }
+        throw error;
+    }
+}
+
+// Función auxiliar para calcular edad
+function calcularEdad(fechaNacimiento) {
+    if (!fechaNacimiento) return null;
+    
+    try {
+        const hoy = new Date();
+        const nacimiento = new Date(fechaNacimiento);
+        let edad = hoy.getFullYear() - nacimiento.getFullYear();
+        const mes = hoy.getMonth() - nacimiento.getMonth();
+        
+        if (mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate())) {
+            edad--;
+        }
+        
+        return `${edad} años`;
+    } catch (error) {
+        console.error('Error calculando edad:', error);
+        return null;
+    }
+}
+
+// ==================== FUNCIÓN PARA GENERAR DOCUMENTO GENERAL ====================
+app.post('/generar-documento/:id_conmed', async (req, res) => {
+    try {
+        const { id_conmed } = req.params;
+        
+        // 1. Obtener datos de la consulta médica
+        const consultaData = await obtenerDatosConsulta(id_conmed);
+        
+        // 2. Generar Word con datos
+        const wordBuffer = await generarDocumentoWord(consultaData);
+        
+        // 3. Convertir a PDF
+        const pdfBuffer = await convertirWordAPDF(wordBuffer);
+        
+        // 4. Enviar al cliente
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="consulta_${id_conmed}.pdf"`);
+        res.send(pdfBuffer);
+        
+    } catch (error) {
+        console.error('Error:', error);
+        res.status(500).json({ error: 'Error al generar documento' });
+    }
+});
+
+// Mantén las funciones originales para generar-documento aquí...
+async function obtenerDatosConsulta(id_conmed) {
+    // Tu implementación original
+}
+
+async function generarDocumentoWord(consultaData) {
+    // Tu implementación original
+}
+
+async function convertirWordAPDF(wordBuffer) {
+    // Tu implementación original
 }
 
 // Ruta para registrar un nuevo usuario
@@ -576,11 +1088,7 @@ app.get('/api/sesiones/:id_conmed', async (req, res) => {
               LEFT JOIN sesiones ses ON ses.id_conmed = cm.id_conmed
           WHERE cm.id_conmed = $1;
       `, [id_conmed]);
-        if (result.rows.length > 0) {
-            res.json(result.rows[0]);
-        } else {
-            res.json({});
-        }
+        res.json(rows);
     } catch (err) {
         console.error(err);
         res.status(501).send('Error al obtener los datos');
@@ -632,28 +1140,40 @@ app.get('/api/consultasMedicas', async (req, res) => {
     try {
       const { rows } = await pool.query(`
           SELECT 
-              cm.id_conmed,
-              cm.codconsul, 
-              pn_paciente.nombres AS nombres_paciente,
-              pn_paciente.apellidos AS apellidos_paciente, 
-              pn_paciente.cedula AS cedula_paciente,
-              dp_paciente.correo AS correo_paciente,
-              dp_paciente.telefono AS telefono_paciente,
-              cm.fechaconsul,
-              pn_medico.nombres AS nombres_medico,
-              pn_medico.apellidos AS apellidos_medico,
-              pn_medico.tipoci AS tipoci_medico,
-              pn_medico.cedula AS cedula_medico,
-              cm.fechaingreso AS fecha_ingreso,
-              cm.cant_sesions AS sesiones,
-              cm.tratment AS tratment,
-              cm.status AS status
-          FROM consultamedica cm 
-              INNER JOIN paciente p ON cm.pacienteid = p.id_paciente 
-              INNER JOIN datospersonales dp_paciente ON p.dpersonalesid = dp_paciente.id_dpersonales 
-              INNER JOIN persona pn_paciente ON dp_paciente.personaid = pn_paciente.id_persona
-              INNER JOIN usuarios u ON cm.medicoid = u.id_usuario
-              INNER JOIN persona pn_medico ON u.id_persona = pn_medico.id_persona;
+            cm.id_conmed,
+            cm.codconsul, 
+            pn_paciente.nombres AS nombres_paciente,
+            pn_paciente.apellidos AS apellidos_paciente, 
+            pn_paciente.cedula AS cedula_paciente,
+            dp_paciente.correo AS correo_paciente,
+            dp_paciente.telefono AS telefono_paciente,
+            cm.fechaconsul,
+            pn_medico.nombres AS nombres_medico,
+            pn_medico.apellidos AS apellidos_medico,
+            pn_medico.tipoci AS tipoci_medico,
+            pn_medico.cedula AS cedula_medico,
+            cm.fechaingreso AS fecha_ingreso,
+            cm.cant_sesions AS sesiones,
+            cm.tratment AS tratment,
+            cm.status AS status,
+            -- Obtener la última próxima sesión
+            ultima_sesion.proxima_sesion AS ultima_proxima_cita,
+            ultima_sesion.fecha_sesion AS ultima_fecha_sesion
+        FROM consultamedica cm 
+            INNER JOIN paciente p ON cm.pacienteid = p.id_paciente 
+            INNER JOIN datospersonales dp_paciente ON p.dpersonalesid = dp_paciente.id_dpersonales 
+            INNER JOIN persona pn_paciente ON dp_paciente.personaid = pn_paciente.id_persona
+            INNER JOIN usuarios u ON cm.medicoid = u.id_usuario
+            INNER JOIN persona pn_medico ON u.id_persona = pn_medico.id_persona
+            LEFT JOIN LATERAL (
+                SELECT 
+                    proxima_sesion,
+                    fecha_sesion
+                FROM sesiones s
+                WHERE s.id_conmed = cm.id_conmed
+                ORDER BY s.fecha_sesion DESC NULLS LAST
+                LIMIT 1
+            ) AS ultima_sesion ON true;
       `);
         res.json(rows);
     } catch (err) {

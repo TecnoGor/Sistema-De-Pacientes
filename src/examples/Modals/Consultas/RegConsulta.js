@@ -7,10 +7,12 @@ import ConsultaForm from "examples/Cards/Forms/Consultas";
 import axios from "axios";
 import Swal from "sweetalert2";
 import { CircularProgress } from "@mui/material";
+import ExamPhisique from "examples/Cards/Forms/Consultas/examPhisique";
 
 function RegConsultas({ close, show, fetch }) {
   const [personaExist, setPersonaExist] = useState(false);
   const [cargando, setCargando] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
   const [formDataConsultas, setFormDataConsultas] = useState({
     pacienteId: "",
     ci: "",
@@ -26,6 +28,13 @@ function RegConsultas({ close, show, fetch }) {
     status: true,
   });
   const API_Host = process.env.REACT_APP_API_URL;
+  const handleNext = async () => {
+    setCurrentStep(currentStep + 1);
+  };
+
+  const handleBack = async () => {
+    setCurrentStep(currentStep - 1);
+  };
 
   const regConsultas = async () => {
     try {
@@ -136,18 +145,41 @@ function RegConsultas({ close, show, fetch }) {
         <Modal.Title>Registrar - Programar Preconsulta</Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        <ConsultaForm formDataConsulta={formDataConsultas} handleChange={handleChange} />
+        {currentStep === 1 ? (
+          <ExamPhisique formExamPhisique={formDataConsultas} handleChange={handleChange} />
+        ) : (
+          <ConsultaForm formDataConsulta={formDataConsultas} handleChange={handleChange} />
+        )}
       </Modal.Body>
       <Modal.Footer>
-        <Button variant="success" onClick={regConsultas}>
+        {/* <Button variant="success" onClick={regConsultas}>
           Examen Fisico
-        </Button>
-        <Button variant="primary" onClick={regConsultas}>
-          Registrar Consulta
-        </Button>
-        <Button variant="secondary" onClick={close}>
-          Cerrar
-        </Button>
+        </Button> */}
+        <>
+          {currentStep === 1 ? (
+            <Button variant="primary" onClick={handleNext}>
+              Siguiente
+            </Button>
+          ) : (
+            <Button variant="secondary" onClick={close}>
+              Cerrar
+            </Button>
+          )}
+          {currentStep === 2 ? (
+            <>
+              <Button variant="primary" onClick={regConsultas}>
+                Registrar Consulta
+              </Button>
+              <Button variant="secondary" onClick={handleBack}>
+                Atras
+              </Button>
+            </>
+          ) : (
+            <Button variant="secondary" onClick={close}>
+              Cerrar
+            </Button>
+          )}
+        </>
       </Modal.Footer>
     </Modal>
   );

@@ -122,7 +122,7 @@ function Basic() {
           textAlign="center"
         >
           <MDTypography variant="h4" fontWeight="medium" color="white" mt={1}>
-            Iniciar Sesion en el Sistema Integral de Gestion de Pacientes de Camaras Hiperbáricas
+            Iniciar Sesión
           </MDTypography>
           {/* <Grid container spacing={3} justifyContent="center" sx={{ mt: 1, mb: 2 }}>
             <Grid item xs={2}>

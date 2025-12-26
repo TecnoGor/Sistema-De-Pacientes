@@ -100,8 +100,10 @@ function InfoAvances({ show, close, id_conmed }) {
   };
 
   useEffect(() => {
-    fetchAvances();
-  }, []);
+    if (show && id) {
+      fetchAvances();
+    }
+  }, [show, id]);
 
   const columns = [
     { Header: "ID", accessor: "id_avances", width: "10%" },
@@ -110,6 +112,8 @@ function InfoAvances({ show, close, id_conmed }) {
     { Header: "Proxima Sesion", accessor: "fecha_avance", width: "20%" },
     { Header: "Presion Arterial Antes", accessor: "parterial_before", width: "15%" },
     { Header: "Presion Arterial Despues", accessor: "parterial_after", width: "15%" },
+    { Header: "Pulso Antes", accessor: "pulso_before", width: "15%" },
+    { Header: "Pulso Despues", accessor: "pulso_after", width: "15%" },
     { Header: "Fecha de Sesion", accessor: "fecha_registro", width: "15%" },
   ];
 

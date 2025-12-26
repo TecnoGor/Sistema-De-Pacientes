@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import "bootstrap/dist/css/bootstrap.min.css";
 import Form from "react-bootstrap/Form";
+import MDTypography from "components/MDTypography";
 import Container from "react-bootstrap/Container";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
@@ -51,7 +52,7 @@ function ConsultaForm({ formDataConsulta, handleChange }) {
         </Col> */}
         <Col>
           <Form.Group className="mb-3" controlId="cedula.ControlInput1">
-            <Form.Label>Cedula de Paciente</Form.Label>
+            <Form.Label>Cédula de Paciente</Form.Label>
             <Form.Control
               type="number"
               placeholder="12345678"
@@ -88,6 +89,244 @@ function ConsultaForm({ formDataConsulta, handleChange }) {
           </Form.Group>
         </Col>
       </Row>
+      <MDTypography variant="h6" gutterBottom color="primary">
+        Examen Fisico
+      </MDTypography>
+      <hr />
+      {/* Examen Fisico Inicio */}
+      <Row>
+        <Col>
+          <Form.Group className="mb-3" controlId="cedula.ControlInput1">
+            <Form.Label>Piel</Form.Label>
+            <Form.Control
+              type="text"
+              placeholder="Descripcion"
+              value={formDataConsulta.piel || ""}
+              name="piel"
+              onChange={handleChange}
+            />
+          </Form.Group>
+        </Col>
+        <Col>
+          <Form.Group className="mb-3" controlId="nombres.ControlInput2">
+            <Form.Label>Cabeza</Form.Label>
+            <Form.Control
+              type="text"
+              placeholder="Descripcion"
+              value={formDataConsulta.cabeza || ""}
+              name="cabeza"
+              onChange={handleChange}
+            />
+          </Form.Group>
+        </Col>
+        <Col>
+          <Form.Group className="mb-3" controlId="apellidos.ControlInput3">
+            <Form.Label>Ojos</Form.Label>
+            <Form.Control
+              type="text"
+              placeholder="Descripcion"
+              value={formDataConsulta.lastname || ""}
+              name="lastname"
+              onChange={handleChange}
+            />
+          </Form.Group>
+        </Col>
+      </Row>
+      <Row>
+        <Col>
+          <Form.Group className="mb-3" controlId="cedula.ControlInput1">
+            <Form.Label>Oido</Form.Label>
+            <Form.Control
+              type="text"
+              placeholder="Descripcion"
+              value={formDataConsulta.oido || ""}
+              name="oido"
+              onChange={handleChange}
+            />
+          </Form.Group>
+        </Col>
+        <Col>
+          <Form.Group className="mb-3" controlId="nombres.ControlInput2">
+            <Form.Label>Nariz</Form.Label>
+            <Form.Control
+              type="text"
+              placeholder="Descripcion"
+              value={formDataConsulta.nariz || ""}
+              name="nariz"
+              onChange={handleChange}
+            />
+          </Form.Group>
+        </Col>
+        <Col>
+          <Form.Group className="mb-3" controlId="apellidos.ControlInput3">
+            <Form.Label>Boca</Form.Label>
+            <Form.Control
+              type="text"
+              placeholder="Descripcion"
+              value={formDataConsulta.boca || ""}
+              name="boca"
+              onChange={handleChange}
+            />
+          </Form.Group>
+        </Col>
+      </Row>
+      <Row>
+        <Col>
+          <Form.Group className="mb-3" controlId="cedula.ControlInput1">
+            <Form.Label>Faringe</Form.Label>
+            <Form.Control
+              type="text"
+              placeholder="Descripcion"
+              value={formDataConsulta.faringe || ""}
+              name="faringe"
+              onChange={handleChange}
+            />
+          </Form.Group>
+        </Col>
+        <Col>
+          <Form.Group className="mb-3" controlId="nombres.ControlInput2">
+            <Form.Label>Cuello</Form.Label>
+            <Form.Control
+              type="text"
+              placeholder="Descripcion"
+              value={formDataConsulta.cuello || ""}
+              name="cuello"
+              onChange={handleChange}
+            />
+          </Form.Group>
+        </Col>
+        <Col>
+          <Form.Group className="mb-3" controlId="apellidos.ControlInput3">
+            <Form.Label>Ganglios Linfaticos</Form.Label>
+            <Form.Control
+              type="text"
+              placeholder="Descripcion"
+              value={formDataConsulta.glinfaticos || ""}
+              name="glinfaticos"
+              onChange={handleChange}
+            />
+          </Form.Group>
+        </Col>
+      </Row>
+      <Row>
+        <Col>
+          <Form.Group className="mb-3" controlId="cedula.ControlInput1">
+            <Form.Label>Tórax</Form.Label>
+            <Form.Control
+              type="text"
+              placeholder="Descripcion"
+              value={formDataConsulta.torax || ""}
+              name="torax"
+              onChange={handleChange}
+            />
+          </Form.Group>
+        </Col>
+        <Col>
+          <Form.Group className="mb-3" controlId="nombres.ControlInput2">
+            <Form.Label>Senos</Form.Label>
+            <Form.Control
+              type="text"
+              placeholder="Descripcion"
+              value={formDataConsulta.senos || ""}
+              name="senos"
+              onChange={handleChange}
+            />
+          </Form.Group>
+        </Col>
+        <Col>
+          <Form.Group className="mb-3" controlId="apellidos.ControlInput3">
+            <Form.Label>Pulmones</Form.Label>
+            <Form.Control
+              type="text"
+              placeholder="Descripcion"
+              value={formDataConsulta.pulmones || ""}
+              name="pulmones"
+              onChange={handleChange}
+            />
+          </Form.Group>
+        </Col>
+      </Row>
+      <Row>
+        <Col>
+          <Form.Group className="mb-3" controlId="cedula.ControlInput1">
+            <Form.Label>Corazón</Form.Label>
+            <Form.Control
+              type="text"
+              placeholder="Descripcion"
+              value={formDataConsulta.corazon || ""}
+              name="corazon"
+              onChange={handleChange}
+            />
+          </Form.Group>
+        </Col>
+        <Col>
+          <Form.Group className="mb-3" controlId="nombres.ControlInput2">
+            <Form.Label>Vasos Sanguíneos</Form.Label>
+            <Form.Control
+              type="text"
+              placeholder="Descripcion"
+              value={formDataConsulta.vsanguineos || ""}
+              name="vsanguineos"
+              onChange={handleChange}
+            />
+          </Form.Group>
+        </Col>
+        <Col>
+          <Form.Group className="mb-3" controlId="apellidos.ControlInput3">
+            <Form.Label>Abdomen</Form.Label>
+            <Form.Control
+              type="text"
+              placeholder="Descripcion"
+              value={formDataConsulta.abdomen || ""}
+              name="abdomen"
+              onChange={handleChange}
+            />
+          </Form.Group>
+        </Col>
+      </Row>
+      <Row>
+        <Col>
+          <Form.Group className="mb-3" controlId="cedula.ControlInput1">
+            <Form.Label>Genitales</Form.Label>
+            <Form.Control
+              type="text"
+              placeholder="Descripcion"
+              value={formDataConsulta.genitales || ""}
+              name="genitales"
+              onChange={handleChange}
+            />
+          </Form.Group>
+        </Col>
+        <Col>
+          <Form.Group className="mb-3" controlId="nombres.ControlInput2">
+            <Form.Label>Recto</Form.Label>
+            <Form.Control
+              type="text"
+              placeholder="Descripcion"
+              value={formDataConsulta.recto || ""}
+              name="recto"
+              onChange={handleChange}
+            />
+          </Form.Group>
+        </Col>
+        <Col>
+          <Form.Group className="mb-3" controlId="apellidos.ControlInput3">
+            <Form.Label>Extremidades</Form.Label>
+            <Form.Control
+              type="text"
+              placeholder="Descripcion"
+              value={formDataConsulta.extremidades || ""}
+              name="extremidades"
+              onChange={handleChange}
+            />
+          </Form.Group>
+        </Col>
+      </Row>
+      {/* Fin Examen */}
+      <MDTypography variant="h6" gutterBottom color="primary">
+        Agendar primera sesión
+      </MDTypography>
+      <hr />
       <Row>
         <Col>
           <Form.Group className="mb-3" controlId="apellidos.ControlInput3">

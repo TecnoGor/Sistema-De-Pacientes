@@ -1,0 +1,38 @@
+
+        CONSENTIMIENTO INFORMADO PARA OXIGENOTERAPIA HIPERBÁRICA
+        
+        1. Identificación del paciente/ representante legal.
+        
+        Nombres y Apellidos del paciente: {paciente_nombres} {paciente_apellidos}
+        edad: {paciente_edad} C.I:{paciente_cedula} 
+        dirección de domicilio: {paciente_direccion}.
+        
+        2. Información general y consentimiento:
+        
+        En mi calidad de paciente y en pleno uso de mis facultades mentales y de
+        mis derechos de salud, el Dr.{medico_nombres} {medico_apellidos}
+        con registro en MPPS:{medico_registro} del servicio de medicina
+        hiperbárica y subacuática, me ha informado en forma confidencial,
+        respetuosa, clara y comprensible el diagnostico de mi/ su enfermedad el cual
+        es:{diagnostico},
+        y de la necesidad de recibir oxigenoterapia hiperbárica en el servicio
+        de medicina hiperbárica y subacuática como parte del tratamiento
+        complementario a mi diagnostico establecido.
+        
+        Consiento de manera libre, voluntaria e informada en ser sometido (a) a
+        oxigenoterapia hiperbárica, que a continuación se detalla el protocolo a
+        emplear: {protocolo}.
+        
+        Se me ha explicado los beneficios que se esperan de la oxigenoterapia al
+        cual me someto...
+        
+        Lo cual ( SI) {aceptacion_si} o ( NO){aceptacion_no} acepto...
+        
+        Firma del paciente/ firma del tutor o familiar
+        
+        C.I: {paciente_cedula}
+        
+        Fecha y hora: {fecha_hora}
+        
+        Firma y sello del Médico: {medico_firma}
+    

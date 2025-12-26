@@ -59,6 +59,48 @@ function Pacientes() {
   };
   const API_Host = process.env.REACT_APP_API_URL;
 
+  const generarConsentimiento = async (idPaciente) => {
+    try {
+      console.log("📥 Generando consentimiento para paciente ID:", idPaciente);
+      const response = await axios({
+        method: "post",
+        url: `${API_Host}/api/generar-consentimiento/${idPaciente}`,
+        responseType: "blob", // IMPORTANTE para archivos binarios
+      });
+
+      console.log("📤 Response recibida");
+
+      // Obtener el nombre del archivo
+      let filename = `consentimiento_paciente_${idPaciente}.docx`;
+      const contentDisposition = response.headers["content-disposition"];
+
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+        if (filenameMatch && filenameMatch[1]) {
+          filename = filenameMatch[1];
+        }
+      }
+
+      console.log("💾 Descargando archivo:", filename);
+
+      // Crear blob y descargar
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      link.style.display = "none";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      console.log("✅ Documento descargado exitosamente");
+    } catch (error) {
+      console.error("❌ Error:", error);
+      alert("Error al generar el consentimiento: " + error.message);
+    }
+  };
+
   const fetchPacientes = async () => {
     // console.log(API_Host);
     try {
@@ -100,6 +142,14 @@ function Pacientes() {
           size="large"
         >
           <Icon>info</Icon>&nbsp;
+        </MDButton>
+        <MDButton
+          onClick={() => generarConsentimiento(paciente.id_persona)}
+          variant="text"
+          color="info"
+          size="large"
+        >
+          <Icon>print</Icon>&nbsp;
         </MDButton>
         {/* <MDButton variant="text" color="error" size="small">
           <Icon>delete</Icon>&nbsp;Eliminar
