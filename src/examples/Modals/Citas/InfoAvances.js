@@ -142,11 +142,12 @@ function InfoAvances({ show, close, id_conmed }) {
       show={show}
       onHide={close}
       size="lg"
+      dialogClassName="modal-90w"
       aria-labelledby="contained-modal-title-vcenter"
       centered
     >
       <Modal.Header closeButton>
-        <Modal.Title id="contained-modal-title-vcenter">Datos de Sesion</Modal.Title>
+        <Modal.Title id="contained-modal-title-vcenter">Datos de Sesión</Modal.Title>
       </Modal.Header>
       <Modal.Body>
         <MDBox>

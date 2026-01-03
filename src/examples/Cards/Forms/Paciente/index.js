@@ -97,10 +97,10 @@ function PacienteForm({ formDataPaciente, handleChange, exception, handleFileCha
         {exception ? (
           <Col>
             <Form.Group className="mb-3" controlId="exceptionD.ControlInput7">
-              <Form.Label>Detallles de exception</Form.Label>
+              <Form.Label>Detallles de excepción</Form.Label>
               <Form.Control
                 type="text"
-                placeholder="Detalles de la Excepcion"
+                placeholder="Detalles de la Excepción"
                 value={formDataPaciente.exceptionD || ""}
                 name="exceptionD"
                 onChange={handleChange}
@@ -110,7 +110,7 @@ function PacienteForm({ formDataPaciente, handleChange, exception, handleFileCha
         ) : (
           <Col>
             <Form.Group className="mb-3" controlId="referencia.ControlInput8">
-              <Form.Label>Referencia Medica</Form.Label>
+              <Form.Label>Referencia Médica</Form.Label>
               <Form.Control
                 type="file"
                 accept=".pdf, .png, .jpg, .jpeg"

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import MDTypography from "components/MDTypography";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { Form, Row, Col, FloatingLabel, Button } from "react-bootstrap";
 // import RegRepresentante from "examples/Modals/Representantes/RegRepresentante";
@@ -36,6 +37,51 @@ function ExamPhisique({ formExamPhisique, handleChange }) {
   return (
     <>
       <Form>
+        <MDTypography variant="h6" gutterBottom color="primary">
+          Ingrese la cedula del paciente y Datos del examen Fisico
+        </MDTypography>
+        <hr />
+        <Row>
+          <Col>
+            <Form.Group className="mb-3" controlId="cedula.ControlInput1">
+              <Form.Label>Cédula de Paciente</Form.Label>
+              <Form.Control
+                type="number"
+                placeholder="12345678"
+                value={formExamPhisique.ci || ""}
+                name="ci"
+                onChange={handleChange}
+              />
+            </Form.Group>
+          </Col>
+          <Col>
+            <Form.Group className="mb-3" controlId="nombres.ControlInput2">
+              <Form.Label>Nombres</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="Nombres"
+                value={formExamPhisique.firstname || ""}
+                name="firstname"
+                onChange={handleChange}
+                disabled
+              />
+            </Form.Group>
+          </Col>
+          <Col>
+            <Form.Group className="mb-3" controlId="apellidos.ControlInput3">
+              <Form.Label>Apellidos</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="Apellidos"
+                value={formExamPhisique.lastname || ""}
+                name="lastname"
+                onChange={handleChange}
+                disabled
+              />
+            </Form.Group>
+          </Col>
+        </Row>
+        <hr />
         <Row>
           <Col>
             <Form.Group className="mb-3" controlId="cedula.ControlInput1">

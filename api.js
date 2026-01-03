@@ -102,19 +102,19 @@ app.post('/api/generar-consentimiento/:id_persona', async (req, res) => {
         
         // 1. Obtener datos del paciente por id_persona
         console.log('📋 Buscando datos del paciente...');
-        const pacienteData = await obtenerDatosPacientePorId(id_persona);
+        const pacienteData = await obtenerDatosParaConsentimiento(id_persona);
         console.log('✅ Datos del paciente encontrados:', {
-            nombres: pacienteData.nombres,
-            apellidos: pacienteData.apellidos,
-            cedula: pacienteData.cedula
+            nombres: pacienteData.nombres_paciente,
+            apellidos: pacienteData.apellidos_paciente,
+            cedula: pacienteData.cedula_paciente
         });
         
         // 2. Preparar datos para la plantilla
         const templateData = {
-            paciente_nombres: pacienteData.nombres || '',
-            paciente_apellidos: pacienteData.apellidos || '',
+            paciente_nombres: pacienteData.nombres_paciente || '',
+            paciente_apellidos: pacienteData.apellidos_paciente || '',
             paciente_edad: calcularEdad(pacienteData.fechanac) || 'N/A',
-            paciente_cedula: pacienteData.cedula || '',
+            paciente_cedula: pacienteData.cedula_paciente || '',
             paciente_direccion: pacienteData.direccion || 'No especificada',
             medico_nombres: 'MÉDICO TRATANTE',
             medico_apellidos: '',
@@ -145,7 +145,7 @@ app.post('/api/generar-consentimiento/:id_persona', async (req, res) => {
         console.log('📤 Enviando documento Word al cliente...');
         
         // Nombre del archivo
-        const nombreArchivo = `consentimiento_${pacienteData.nombres}_${pacienteData.apellidos}.docx`;
+        const nombreArchivo = `consentimiento_${pacienteData.nombres_paciente}_${pacienteData.apellidos_paciente}.docx`;
         const nombreSeguro = nombreArchivo.replace(/[^a-zA-Z0-9._-]/g, '_');
         
         // Configurar headers para descarga de Word
@@ -812,6 +812,162 @@ app.post('/api/regConsultas', async (req, res) => {
     }
 });
 
+// Backend: endpoint para insertar examen físico (CORREGIDO PARA POSTGRESQL)
+app.post('/api/examen-fisico', async (req, res) => {
+    try {
+        const {
+            pacienteId,
+            usuario_registro,
+            // Campos del formulario
+            piel,
+            cabeza,
+            ojos,
+            oido,
+            nariz,
+            boca,
+            faringe,
+            cuello,
+            glinfaticos,
+            torax,
+            senos,
+            pulmones,
+            corazon,
+            vsanguineos,
+            abdomen,
+            genitales,
+            recto,
+            extremidades,
+            observaciones
+        } = req.body;
+
+        // Validación básica
+        if (!pacienteId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Código de paciente y usuario son requeridos'
+            });
+        }
+
+        // Query para insertar el examen físico (CORREGIDO - PostgreSQL usa $1, $2...)
+        const query = `
+            INSERT INTO examenes_fisicos 
+            (
+                codigo_paciente, usuario_registro,
+                piel, cabeza, ojos, oido, nariz, boca,
+                faringe, cuello, glinfaticos, torax,
+                senos, pulmones, corazon, vsanguineos,
+                abdomen, genitales, recto, extremidades,
+                observaciones
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
+            RETURNING id_examen, fecha_registro
+        `;
+
+        const result = await pool.query(query, [
+            pacienteId,
+            usuario_registro,
+            piel || null,
+            cabeza || null,
+            ojos || null,
+            oido || null,
+            nariz || null,
+            boca || null,
+            faringe || null,
+            cuello || null,
+            glinfaticos || null,
+            torax || null,
+            senos || null,
+            pulmones || null,
+            corazon || null,
+            vsanguineos || null,
+            abdomen || null,
+            genitales || null,
+            recto || null,
+            extremidades || null,
+            observaciones || null
+        ]);
+
+        res.status(201).json({
+            success: true,
+            message: 'Examen físico registrado correctamente',
+            data: {
+                id_examen: result.rows[0].id_examen,
+                // pacienteId,
+                fecha_registro: result.rows[0].fecha_registro
+            }
+        });
+
+    } catch (error) {
+        console.error('Error al registrar examen físico:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error al registrar el examen físico',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+});
+
+// Endpoint para obtener exámenes físicos de un paciente
+app.get('/api/examenes-fisicos/:codigo_paciente', async (req, res) => {
+    try {
+        const { codigo_paciente } = req.params;
+        
+        const query = `
+            SELECT * FROM examenes_fisicos 
+            WHERE codigo_paciente = $1 
+            AND estado_registro = 'ACTIVO'
+            ORDER BY fecha_registro DESC
+        `;
+        
+        const result = await pool.query(query, [codigo_paciente]);
+        
+        res.json({
+            success: true,
+            data: result.rows
+        });
+        
+    } catch (error) {
+        console.error('Error al obtener exámenes físicos:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error al obtener exámenes físicos'
+        });
+    }
+});
+
+// Endpoint para obtener un examen físico específico
+app.get('/api/examen-fisico/:id_examen', async (req, res) => {
+    try {
+        const { id_examen } = req.params;
+        
+        const query = `
+            SELECT * FROM examenes_fisicos 
+            WHERE id_examen = $1 
+            AND estado_registro = 'ACTIVO'
+        `;
+        
+        const result = await pool.query(query, [id_examen]);
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Examen físico no encontrado'
+            });
+        }
+        
+        res.json({
+            success: true,
+            data: result.rows[0]
+        });
+        
+    } catch (error) {
+        console.error('Error al obtener examen físico:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error al obtener examen físico'
+        });
+    }
+});
+
 app.post('/api/regAdvanceConsul', async (req, res) => {
     const { id_conmed, tiempo_tratamiento, fecha_avance, estado_paciente, diagnostico_avance } = req.body;
 
@@ -884,6 +1040,55 @@ app.post('/api/regSesion', async (req, res) => {
         res.status(500).json({
             success: false,
             error: err.message
+        });
+    }
+});
+
+app.post('/api/regInasistencia', async (req, res) => {
+    const { id_conmed, fechaInasis } = req.body;
+
+    try {
+        const response = await pool.query(
+            'INSERT INTO inasistencias (id_conmed, fecha_inasistencia) VALUES ($1, $2) RETURNING *',
+            [id_conmed, fechaInasis]
+        );
+        res.status(201).json({
+            success:true,
+            message: "Inasistencia Registrada",
+            data: response.rows[0]
+        });
+    } catch (err) {
+        console.log('El error es: ', err);
+        res.status(500).json({
+            success: false,
+            message: err.message
+        });
+    }
+});
+
+app.get('/api/inasistenciasPerConsulta/:id_conmed', async (req, res) => {
+    const { id_conmed } = req.params;
+
+    try {
+        const response = await pool.query(
+            `SELECT
+                COUNT(*) AS total_inasistencias,
+	            MAX(fecha_inasistencia) AS ultima_inasistencia
+            FROM inasistencias
+            WHERE id_conmed = $1`,
+            [id_conmed]
+        );
+
+        if (response.rows.length > 0) {
+            res.json(response.rows[0]);
+        } else {
+            res.json({});
+        }
+    } catch(error) {
+        console.log("El error es: ", error)
+        res.status(500).json({
+            success: false,
+            message: `Error al contar las inasistencias: ${error.message}`,
         });
     }
 });

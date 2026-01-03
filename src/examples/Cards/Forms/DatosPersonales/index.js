@@ -56,7 +56,7 @@ function DatosPersonales({ formDataPersonales, handleChange }) {
       <Form>
         <Row>
           <Col>
-            <FloatingLabel controlId="mail" label="Correo Electronico" className="mb-3">
+            <FloatingLabel controlId="mail" label="Correo Electrónico" className="mb-3">
               <Form.Control
                 type="email"
                 name="mail"
@@ -67,7 +67,7 @@ function DatosPersonales({ formDataPersonales, handleChange }) {
             </FloatingLabel>
           </Col>
           <Col>
-            <FloatingLabel controlId="phone" label="Telefono Celular / Local" className="mb-3">
+            <FloatingLabel controlId="phone" label="Teléfono Celular / Local" className="mb-3">
               <Form.Control
                 type="text"
                 name="phone"
@@ -102,7 +102,7 @@ function DatosPersonales({ formDataPersonales, handleChange }) {
             </FloatingLabel>
           </Col>
           <Col>
-            <FloatingLabel controlId="studios" label="Grado de Instruccion" className="mb-3">
+            <FloatingLabel controlId="studios" label="Grado de Instrucción" className="mb-3">
               <Form.Select
                 name="studios"
                 value={formDataPersonales.studios}
@@ -125,13 +125,13 @@ function DatosPersonales({ formDataPersonales, handleChange }) {
         {!esMenorEdad(formDataPersonales.bdate) ? (
           <Row>
             <Col>
-              <FloatingLabel controlId="ocupation" label="Profesion/Ocupacion" className="mb-3">
+              <FloatingLabel controlId="ocupation" label="Profesión/Ocupación" className="mb-3">
                 <Form.Control
                   as="textarea"
                   name="ocupation"
                   value={formDataPersonales.ocupation}
                   onChange={handleChange}
-                  placeholder="A que se dedica o que profesion ocupa"
+                  placeholder="A que se dedica o que profesión ocupa"
                   style={{ height: "100px" }}
                 />
               </FloatingLabel>
@@ -177,7 +177,7 @@ function DatosPersonales({ formDataPersonales, handleChange }) {
         </Row>
         <Row>
           <Col>
-            <FloatingLabel controlId="dirhouse" label="Direccion de Habitacion" className="mb-3">
+            <FloatingLabel controlId="dirhouse" label="Dirección de Habitación" className="mb-3">
               <Form.Control
                 as="textarea"
                 name="dirhouse"

@@ -48,6 +48,48 @@ function Consultas() {
   let i = 1;
   const API_Host = process.env.REACT_APP_API_URL;
 
+  const generarConsentimiento = async (idPaciente) => {
+    try {
+      console.log("📥 Generando consentimiento para paciente ID:", idPaciente);
+      const response = await axios({
+        method: "post",
+        url: `${API_Host}/api/generar-consentimiento/${idPaciente}`,
+        responseType: "blob", // IMPORTANTE para archivos binarios
+      });
+
+      console.log("📤 Response recibida");
+
+      // Obtener el nombre del archivo
+      let filename = `consentimiento_paciente_${idPaciente}.docx`;
+      const contentDisposition = response.headers["content-disposition"];
+
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+        if (filenameMatch && filenameMatch[1]) {
+          filename = filenameMatch[1];
+        }
+      }
+
+      console.log("💾 Descargando archivo:", filename);
+
+      // Crear blob y descargar
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      link.style.display = "none";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      console.log("✅ Documento descargado exitosamente");
+    } catch (error) {
+      console.error("❌ Error:", error);
+      alert("Error al generar el consentimiento: " + error.message);
+    }
+  };
+
   const fetchConsultas = async () => {
     try {
       setLoading(true);
@@ -82,13 +124,14 @@ function Consultas() {
 
   const columns = [
     { Header: "ID", accessor: "id_consulta", width: "5%" },
-    { Header: "Codigo de Consulta", accessor: "codConsul", width: "5%" },
+    { Header: "Código de Consulta", accessor: "codConsul", width: "5%" },
     { Header: "Paciente", accessor: "nombresP", width: "15%" },
-    { Header: "Cedula Paciente", accessor: "cedulaP", width: "15%" },
-    { Header: "Medico", accessor: "nombresM", width: "20%" },
+    { Header: "Cédula Paciente", accessor: "cedulaP", width: "15%" },
+    { Header: "Médico", accessor: "nombresM", width: "20%" },
     { Header: "Cédula Medico", accessor: "cedulaM", width: "15%" },
     { Header: "Fecha de Consulta", accessor: "fecha_cita", width: "15%" },
     { Header: "Sesiones", accessor: "sesiones", width: "15%" },
+    { Header: "Acciones", accessor: "acciones", width: "15%" },
   ];
 
   const rows = consultas.map((consulta) => ({
@@ -100,6 +143,16 @@ function Consultas() {
     cedulaM: consulta.cedula_medico,
     fecha_cita: formatDate(consulta.fechaconsul) || "09/08/2025",
     sesiones: consulta.sesiones,
+    acciones: (
+      <MDButton
+        onClick={() => generarConsentimiento(consulta.id_conmed)}
+        variant="text"
+        color="info"
+        size="large"
+      >
+        <Icon>print</Icon>&nbsp;
+      </MDButton>
+    ),
     // actions: (
     //   <MDBox display="flex" gap={1}>
     //     <MDButton variant="text" color="info" size="large">
@@ -180,7 +233,7 @@ function Consultas() {
                 coloredShadow="info"
               >
                 <MDTypography variant="h6" color="white">
-                  Consultas Medicas
+                  Consultas Médicas
                 </MDTypography>
               </MDBox>
               <MDBox pt={3}>

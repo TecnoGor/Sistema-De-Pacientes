@@ -251,13 +251,9 @@ function Citas() {
         >
           <Icon>visibility</Icon>
         </MDButton>
-        {/* <MDButton variant="text" color="danger" size="large">
-          <RemoveCircleIcon />
-          &nbsp;
-        </MDButton> */}
-        <MDButton onClick={() => handleInasistencia()} variant="text" color="error" size="large">
+        {/* <MDButton onClick={() => handleInasistencia()} variant="text" color="error" size="large">
           <Icon>delete</Icon> Inasistencia
-        </MDButton>
+        </MDButton> */}
       </MDBox>
     ),
   }));

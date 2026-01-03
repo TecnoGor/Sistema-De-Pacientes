@@ -37,13 +37,24 @@ function InfoCita({ show, close, fetch, id_conmed }) {
   const [isAdvance, setIsAdvance] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const fecha_hoy = new Date();
+  const dia = fecha_hoy.getDate();
+  const mes = fecha_hoy.getMonth() + 1;
+  const anio = fecha_hoy.getFullYear();
+  const fechaBien = `${dia}-${mes}-${anio}`;
+  const [stateInasBtt, setStateInasBtt] = useState(false);
   const [getId, setGetId] = useState(null);
   const API_Host = process.env.REACT_APP_API_URL;
+  const [formInasistencias, setFormInasistencias] = useState({
+    inasistencias: 0,
+    fecha_inasistencia: null,
+  });
   const [formData, setFormData] = useState({
     id_conmed: "",
     codconsul: "",
     nombres_paciente: "",
     apellidos_paciente: "",
+    fechaInasis: fechaBien,
     cedula_paciente: "",
     correo_paciente: "",
     telefono_paciente: "",
@@ -73,6 +84,7 @@ function InfoCita({ show, close, fetch, id_conmed }) {
     pulso_after: "",
     frespiratoria_after: "",
   });
+  console.log(formData);
   const formatDate = (dateString) => {
     if (!dateString) return "Fecha no disponible";
     try {
@@ -99,6 +111,80 @@ function InfoCita({ show, close, fetch, id_conmed }) {
     } catch (error) {
       return "2025-08-09";
     }
+  };
+
+  const handleButtonInasistencia = async () => {
+    if (!formInasistencias.fecha_inasistencia) {
+      setStateInasBtt(false);
+      console.log("No hay fecha de inasistencia previa");
+      return false;
+    }
+
+    try {
+      const fechaInasistencia = new Date(formInasistencias.fecha_inasistencia);
+      const hoy = new Date();
+
+      // Normalizar fechas (establecer a medianoche)
+      const fechaInasNormalizada = new Date(
+        fechaInasistencia.getFullYear(),
+        fechaInasistencia.getMonth(),
+        fechaInasistencia.getDate()
+      );
+      const hoyNormalizado = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+
+      const esHoy = fechaInasNormalizada.getTime() === hoyNormalizado.getTime();
+
+      console.log(
+        `Comparación: ${fechaInasNormalizada.toDateString()} vs ${hoyNormalizado.toDateString()}`
+      );
+      console.log("Estado del botón:", esHoy ? "DESHABILITADO" : "HABILITADO");
+
+      setStateInasBtt(esHoy);
+      return esHoy;
+    } catch (error) {
+      console.error("Error al comparar fechas:", error);
+      setStateInasBtt(false);
+      return false;
+    }
+  };
+
+  const handleInasistencia = async () => {
+    Swal.fire({
+      title: "Seguro que quieres anotar una inasistencia?",
+      showDenyButton: true,
+      showCancelButton: false,
+      confirmButtonText: "Si",
+      denyButtonText: `No`,
+    }).then((result) => {
+      if (result.isConfirmed) {
+        return axios
+          .post(`${API_Host}/api/regInasistencia`, formData, {
+            headers: { "Content-Type": "application/json" },
+          })
+          .then((response) => {
+            if (response.status === 201) {
+              Swal.fire({
+                title: "Inasistencia Registrada!",
+                text: "Inasistencia registrada con éxito.",
+                icon: "info",
+                draggable: true,
+              });
+              setStateInasBtt(true);
+              // fetch();
+            }
+          })
+          .catch((error) => {
+            console.error("Error al registrar inasistencia:", error);
+            Swal.fire({
+              title: "Error",
+              text: "No se pudo registrar la inasistencia",
+              icon: "error",
+            });
+          });
+      } else if (result.isDenied) {
+        Swal.fire("No se registró una inasistencia", "", "info");
+      }
+    });
   };
 
   // const toggleEditing = () => {
@@ -177,6 +263,24 @@ function InfoCita({ show, close, fetch, id_conmed }) {
     setIsAdvance(false);
   };
 
+  const fetchInasistencias = async () => {
+    try {
+      const result = await axios.get(`${API_Host}/api/inasistenciasPerConsulta/${id}`);
+      const inasistencias = result.data;
+
+      setFormInasistencias({
+        inasistencias: inasistencias.total_inasistencias,
+        fecha_inasistencia: inasistencias.ultima_inasistencia,
+      });
+      console.log(`Inasistencias: ${formInasistencias}`);
+    } catch (err) {
+      console.error("Error al obtener datos de inasistencias:", err);
+      setError("Error al cargar los datos de la inasistencias. Inténtelo de nuevo.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const fetchCita = async () => {
     if (!id) return;
     // console.log(id);
@@ -194,6 +298,7 @@ function InfoCita({ show, close, fetch, id_conmed }) {
         nombres_paciente: citaData.nombres_paciente,
         apellidos_paciente: citaData.apellidos_paciente,
         cedula_paciente: citaData.cedula_paciente,
+        fechaInasis: fechaBien,
         correo_paciente: citaData.correo_paciente,
         telefono_paciente: citaData.telefono_paciente,
         fechaconsul: formatToYYYYMMDD(citaData.fechaconsul),
@@ -204,7 +309,7 @@ function InfoCita({ show, close, fetch, id_conmed }) {
         tratment: citaData.tratment,
         status_consulta: citaData.status,
       });
-      console.log(formData);
+      console.log("Esta es la data: ", formData);
     } catch (err) {
       console.error("Error al obtener datos del paciente:", err);
       setError("Error al cargar los datos del paciente. Inténtelo de nuevo.");
@@ -213,9 +318,105 @@ function InfoCita({ show, close, fetch, id_conmed }) {
     }
   };
 
+  const handlePrintEgreso = async (idPaciente) => {
+    try {
+      console.log("📥 Generando consentimiento para paciente ID:", idPaciente);
+      const response = await axios({
+        method: "post",
+        url: `${API_Host}/api/generar-consentimiento/${idPaciente}`,
+        responseType: "blob", // IMPORTANTE para archivos binarios
+      });
+
+      console.log("📤 Response recibida");
+
+      // Obtener el nombre del archivo
+      let filename = `consentimiento_paciente_${idPaciente}.docx`;
+      const contentDisposition = response.headers["content-disposition"];
+
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+        if (filenameMatch && filenameMatch[1]) {
+          filename = filenameMatch[1];
+        }
+      }
+
+      console.log("💾 Descargando archivo:", filename);
+
+      // Crear blob y descargar
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      link.style.display = "none";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      console.log("✅ Documento descargado exitosamente");
+    } catch (error) {
+      console.error("❌ Error:", error);
+      alert("Error al generar el consentimiento: " + error.message);
+    }
+  };
+
+  useEffect(() => {
+    // Función para resetear todo
+    const resetAll = () => {
+      setStateInasBtt(false);
+      setFormInasistencias({
+        inasistencias: 0,
+        fecha_inasistencia: null,
+      });
+      setIsAdvance(false);
+      setFormData({
+        // ... reset del formData si es necesario
+      });
+    };
+
+    // Si el modal se cierra, resetear
+    if (!show) {
+      resetAll();
+    }
+
+    return () => {
+      // Cleanup cuando el componente se desmonta
+      resetAll();
+    };
+  }, [show]);
+
+  useEffect(() => {
+    console.log("Fecha de inasistencia actualizada:", formInasistencias.fecha_inasistencia);
+
+    if (formInasistencias.fecha_inasistencia) {
+      const result = handleButtonInasistencia();
+      console.log("Resultado de comparación:", result);
+    } else {
+      console.log("Sin fecha de inasistencia, botón HABILITADO");
+      setStateInasBtt(false);
+    }
+  }, [formInasistencias.fecha_inasistencia]);
+  // useEffect(() => {
+  //   if (id) {
+  //     // Resetear el estado del botón cuando cambia el ID
+  //     setStateInasBtt(false);
+  //     setFormInasistencias({
+  //       inasistencias: 0,
+  //       fecha_inasistencia: "",
+  //     });
+  //   }
+  // }, [id]);
+
+  // useEffect(() => {
+  //   if (formInasistencias.fecha_inasistencia) {
+  //     handleButtonInasistencia();
+  //   }
+  // }, [formInasistencias.fecha_inasistencia]);
+
   useEffect(() => {
     if (show && id) {
       fetchCita();
+      fetchInasistencias();
     }
   }, [show, id]);
 
@@ -247,6 +448,15 @@ function InfoCita({ show, close, fetch, id_conmed }) {
                   <>
                     <MDButton
                       variant="gradient"
+                      color="success"
+                      onClick={() => handlePrintEgreso(id)}
+                      startIcon={<Icon>print</Icon>}
+                    >
+                      Imprimir Informe
+                    </MDButton>
+                    &nbsp;
+                    <MDButton
+                      variant="gradient"
                       color="info"
                       onClick={toggleAdvance}
                       startIcon={<Icon>edit</Icon>}
@@ -265,6 +475,16 @@ function InfoCita({ show, close, fetch, id_conmed }) {
                       startIcon={<Icon>dataset</Icon>}
                     >
                       Registrar Sesion
+                    </MDButton>
+                    &nbsp;&nbsp;
+                    <MDButton
+                      variant="gradient"
+                      color="error"
+                      onClick={() => handleInasistencia()}
+                      startIcon={<Icon>delete</Icon>}
+                      disabled={stateInasBtt === true}
+                    >
+                      Registrar Inasistencias
                     </MDButton>
                     &nbsp;&nbsp;
                     <MDButton
@@ -299,6 +519,26 @@ function InfoCita({ show, close, fetch, id_conmed }) {
               </Box>
             )}
           </Box>
+
+          <Card sx={{ mb: 3 }}>
+            <CardContent>
+              <MDTypography variant="h6" gutterBottom color="primary">
+                Inasistencias Registradas: {formInasistencias.inasistencias}
+              </MDTypography>
+              <Grid container spacing={3}>
+                {/* <Grid item xs={12} sm={4}>
+                  <MDInput
+                    label="Codigo de Consulta"
+                    name="codconsul"
+                    value={formData.codconsul || ""}
+                    fullWidth
+                    disabled={!isEditing}
+                  />
+                </Grid> */}
+              </Grid>
+            </CardContent>
+          </Card>
+
           <Card sx={{ mb: 3 }}>
             <CardContent>
               <MDTypography variant="h6" gutterBottom color="primary">
@@ -312,17 +552,6 @@ function InfoCita({ show, close, fetch, id_conmed }) {
                     value={formData.codconsul || ""}
                     fullWidth
                     disabled={!isEditing}
-                  />
-                </Grid>
-                <Grid item xs={12} sm={4}>
-                  <MDInput
-                    label="Diagnostico"
-                    name="diagnostic"
-                    type="text"
-                    value={formData.diagnostic || ""}
-                    fullWidth
-                    disabled={!isEditing}
-                    InputLabelProps={{ shrink: true }}
                   />
                 </Grid>
                 <Grid item xs={12} sm={4}>

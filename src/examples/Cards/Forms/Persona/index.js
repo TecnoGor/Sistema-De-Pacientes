@@ -12,7 +12,7 @@ function PersonaForm({ formDataPersona, handleChange }) {
       <Row>
         <Col>
           <Form.Group className="mb-3" controlId="tipoCed.ControlSelect1">
-            <Form.Label>Tipo de Cedula</Form.Label>
+            <Form.Label>Tipo de Cédula</Form.Label>
             <Form.Select
               aria-label="Default example"
               value={formDataPersona.typeCi || ""}
@@ -27,7 +27,7 @@ function PersonaForm({ formDataPersona, handleChange }) {
         </Col>
         <Col>
           <Form.Group className="mb-3" controlId="cedula.ControlInput1">
-            <Form.Label>Cedula</Form.Label>
+            <Form.Label>Cédula</Form.Label>
             <Form.Control
               type="number"
               placeholder="12345678"

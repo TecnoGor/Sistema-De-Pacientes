@@ -26,8 +26,59 @@ function RegConsultas({ close, show, fetch }) {
     tratment: "",
     medicoid: "",
     status: true,
+    codigo_paciente: "",
+    usuario_registro: "",
+    piel: "",
+    cabeza: "",
+    ojos: "",
+    oido: "",
+    nariz: "",
+    boca: "",
+    faringe: "",
+    cuello: "",
+    glinfaticos: "",
+    torax: "",
+    senos: "",
+    pulmones: "",
+    corazon: "",
+    vsanguineos: "",
+    abdomen: "",
+    genitales: "",
+    recto: "",
+    extremidades: "",
+    observaciones: "",
   });
   const API_Host = process.env.REACT_APP_API_URL;
+  const enviarExamenFisico = async (datosExamen) => {
+    console.log(datosExamen);
+    try {
+      const response = await axios.post(
+        `${API_Host}/api/examen-fisico`, // Ajusta el puerto según tu configuración
+        datosExamen
+      );
+
+      if (response.status === 201) {
+        Swal.fire({
+          title: "Consulta Registrada!",
+          text: "Consulta Agendada con exito.",
+          icon: "success",
+          draggable: true,
+        });
+        handleNext();
+      }
+      // return response.data;
+    } catch (error) {
+      Swal.fire({
+        title: "Error al realizar la consulta.",
+        text: error,
+        icon: "error",
+        draggable: true,
+      });
+      // console.error("Error al enviar examen físico:", error);
+      // throw error;
+    }
+  };
+
   const handleNext = async () => {
     setCurrentStep(currentStep + 1);
   };
@@ -157,7 +208,7 @@ function RegConsultas({ close, show, fetch }) {
         </Button> */}
         <>
           {currentStep === 1 ? (
-            <Button variant="primary" onClick={handleNext}>
+            <Button variant="primary" onClick={() => enviarExamenFisico(formDataConsultas)}>
               Siguiente
             </Button>
           ) : (
