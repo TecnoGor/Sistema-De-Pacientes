@@ -217,7 +217,7 @@ function Roles() {
               >
                 <MDButton variant="gradient" color="dark" onClick={handleShow}>
                   <Icon sx={{ fontWeight: "bold" }}>person</Icon>
-                  &nbsp;Registrar Usuarios
+                  &nbsp;Registrar Roles
                 </MDButton>
               </MDBox>
               <MDBox pt={3}>

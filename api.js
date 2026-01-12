@@ -167,6 +167,82 @@ app.post('/api/generar-consentimiento/:id_persona', async (req, res) => {
     }
 });
 
+app.post('/api/generar-informe-egreso/:id_persona', async (req, res) => {
+    console.log('🔔 ===== ENDPOINT LLAMADO =====');
+    console.log('📌 Método:', req.method);
+    console.log('📌 URL:', req.url);
+    console.log('📌 id_persona recibido:', req.params.id_persona);
+    
+    try {
+        const { id_persona } = req.params;
+        
+        // 1. Obtener datos del paciente por id_persona
+        console.log('📋 Buscando datos del paciente...');
+        const pacienteData = await obtenerDatosParaEgreso(id_persona);
+        console.log('✅ Datos del paciente encontrados:', {
+            nombres: pacienteData.nombres_paciente,
+            apellidos: pacienteData.apellidos_paciente,
+            cedula: pacienteData.cedula_paciente
+        });
+        
+        // 2. Preparar datos para la plantilla
+        const templateData = {
+            paciente_nombres: pacienteData.nombres_paciente || '',
+            paciente_apellidos: pacienteData.apellidos_paciente || '',
+            paciente_edad: calcularEdad(pacienteData.fechanac) || 'N/A',
+            paciente_cedula: pacienteData.cedula_paciente || '',
+            paciente_direccion: pacienteData.direccion || 'No especificada',
+            medico_nombres: 'MÉDICO TRATANTE',
+            medico_apellidos: '',
+            medico_registro: 'N/A',
+            diagnostico: 'Enfermedad que requiere oxigenoterapia hiperbárica',
+            protocolo: 'Protocolo estándar de oxigenoterapia hiperbárica',
+            aceptacion_si: '☑',
+            aceptacion_no: '☐',
+            fecha_hora: new Date().toLocaleString('es-VE', {
+                timeZone: 'America/Caracas',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            }),
+            medico_firma: 'MÉDICO TRATANTE'
+        };
+        
+        console.log('📄 Datos preparados para plantilla');
+        
+        // 3. Generar documento Word desde plantilla
+        console.log('🔄 Generando documento Word...');
+        const wordBuffer = await generarEgresoWord(templateData);
+        console.log('✅ Documento Word generado, tamaño:', wordBuffer.length, 'bytes');
+        
+        // 4. Enviar el documento Word directamente (sin convertir a PDF)
+        console.log('📤 Enviando documento Word al cliente...');
+        
+        // Nombre del archivo
+        const nombreArchivo = `consentimiento_${pacienteData.nombres_paciente}_${pacienteData.apellidos_paciente}.docx`;
+        const nombreSeguro = nombreArchivo.replace(/[^a-zA-Z0-9._-]/g, '_');
+        
+        // Configurar headers para descarga de Word
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+        res.setHeader('Content-Disposition', `attachment; filename="${nombreSeguro}"`);
+        res.setHeader('Content-Length', wordBuffer.length);
+        
+        res.send(wordBuffer);
+        console.log('✅ Documento Word enviado exitosamente:', nombreSeguro);
+        
+    } catch (error) {
+        console.error('❌ ===== ERROR EN ENDPOINT =====');
+        console.error('❌ Error:', error.message);
+        console.error('❌ Stack trace:', error.stack);
+        res.status(500).json({ 
+            error: 'Error al generar el consentimiento',
+            detalle: error.message 
+        });
+    }
+});
+
 async function obtenerDatosPacientePorId(id_persona) {
     console.log('Buscando datos del paciente por ID:', id_persona);
     
@@ -245,10 +321,141 @@ async function obtenerDatosParaConsentimiento(id_conmed) {
     return result.rows[0];
 }
 
+async function obtenerDatosParaEgreso(id_conmed) {
+    const query = `
+        SELECT 
+            cm.id_conmed,
+            cm.codconsul,
+            cm.tratment,
+            pn_paciente.nombres AS nombres_paciente,
+            pn_paciente.apellidos AS apellidos_paciente,
+            pn_paciente.cedula AS cedula_paciente,
+            dp_paciente.fechanac,
+            dp_paciente.direccion,
+            dp_paciente.correo AS correo_paciente,
+            dp_paciente.telefono AS telefono_paciente,
+            pn_medico.nombres AS nombres_medico,
+            pn_medico.apellidos AS apellidos_medico,
+            pn_medico.cedula AS cedula_medico,
+            cm.fechaconsul,
+            -- Obtener el último protocolo de sesiones
+            (
+                SELECT protocolo 
+                FROM sesiones 
+                WHERE id_conmed = cm.id_conmed 
+                ORDER BY fecha_sesion DESC 
+                LIMIT 1
+            ) AS protocolo
+            -- Obtener registro médico si existe (ajusta según tu schema)
+        FROM consultamedica cm 
+        INNER JOIN paciente p ON cm.pacienteid = p.id_paciente 
+        INNER JOIN datospersonales dp_paciente ON p.dpersonalesid = dp_paciente.id_dpersonales 
+        INNER JOIN persona pn_paciente ON dp_paciente.personaid = pn_paciente.id_persona
+        INNER JOIN usuarios u ON cm.medicoid = u.id_usuario
+        INNER JOIN persona pn_medico ON u.id_persona = pn_medico.id_persona
+        WHERE cm.id_conmed = $1
+    `;
+    
+    const result = await pool.query(query, [id_conmed]);
+    
+    if (result.rows.length === 0) {
+        throw new Error('Consulta no encontrada');
+    }
+    
+    return result.rows[0];
+}
+
 // Función para generar el documento Word del consentimiento
 async function generarConsentimientoWord(data) {
     try {
         const templatePath = path.join(__dirname, 'uploads', 'plantillas', 'consentimiento_informado.docx');
+        
+        console.log('📁 Buscando plantilla en:', templatePath);
+        console.log('📁 ¿Existe la plantilla?', fs.existsSync(templatePath));
+        
+        if (!fs.existsSync(templatePath)) {
+            throw new Error(`Plantilla no encontrada en: ${templatePath}`);
+        }
+        
+        // Leer el contenido de la plantilla como BUFFER (no como binary)
+        const content = fs.readFileSync(templatePath);
+        console.log('✅ Plantilla leída, tamaño:', content.length, 'bytes');
+        
+        // Usar PizZip correctamente
+        let zip;
+        try {
+            zip = new PizZip(content);
+            console.log('✅ Archivo ZIP descomprimido');
+        } catch (zipError) {
+            console.error('❌ Error al descomprimir el archivo:', zipError);
+            throw new Error('La plantilla no es un archivo .docx válido');
+        }
+        
+        // Inicializar docxtemplater
+        let doc;
+        try {
+            doc = new Docxtemplater(zip, {
+                paragraphLoop: true,
+                linebreaks: true,
+                nullGetter: () => ''
+            });
+            console.log('✅ Docxtemplater inicializado');
+        } catch (docError) {
+            console.error('❌ Error al inicializar docxtemplater:', docError);
+            throw new Error('Error al procesar la plantilla Word');
+        }
+        
+        // Renderizar con los datos
+        try {
+            console.log('📋 Renderizando con datos:', data);
+            doc.render(data);
+            console.log('✅ Plantilla renderizada correctamente');
+        } catch (renderError) {
+            console.error('❌ Error al renderizar:', renderError);
+            if (renderError.properties) {
+                console.error('❌ Detalles del error de renderizado:');
+                console.error('- Message:', renderError.properties.message);
+                console.error('- Explanation:', renderError.properties.explanation);
+                console.error('- File:', renderError.properties.file);
+                console.error('- Line:', renderError.properties.line);
+                console.error('- Column:', renderError.properties.column);
+            }
+            throw renderError;
+        }
+        
+        // Generar buffer con opciones específicas
+        let buffer;
+        try {
+            buffer = doc.getZip().generate({
+                type: 'nodebuffer',
+                compression: 'DEFLATE',
+                mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            });
+            console.log('✅ Buffer generado, tamaño:', buffer.length, 'bytes');
+        } catch (generateError) {
+            console.error('❌ Error al generar buffer:', generateError);
+            throw generateError;
+        }
+        
+        // Opcional: Guardar para depuración
+        const debugPath = path.join(__dirname, 'temp', `debug_${Date.now()}.docx`);
+        if (!fs.existsSync(path.dirname(debugPath))) {
+            fs.mkdirSync(path.dirname(debugPath), { recursive: true });
+        }
+        fs.writeFileSync(debugPath, buffer);
+        console.log('📁 Archivo de depuración guardado en:', debugPath);
+        
+        return buffer;
+        
+    } catch (error) {
+        console.error('❌ Error en generarConsentimientoWord:', error);
+        throw error;
+    }
+}
+
+async function generarEgresoWord(data) {
+    try {
+        const templatePath = path.join(__dirname, 'uploads', 'plantillas', 'informe_egreso.docx');
         
         console.log('📁 Buscando plantilla en:', templatePath);
         console.log('📁 ¿Existe la plantilla?', fs.existsSync(templatePath));
@@ -1341,6 +1548,52 @@ app.get('/api/consultaMedica/:id_conmed', async (req, res) => {
   }
 });
 
+app.get('/api/dashboardProgressPacientes', async (req, res) => {
+    try {
+        const { rows } = await pool.query(`
+            SELECT 
+                cm.id_conmed,
+                pn_paciente.nombres AS nombres_paciente,
+                pn_paciente.apellidos AS apellidos_paciente, 
+                pn_paciente.cedula AS cedula_paciente,
+                pn_medico.nombres AS nombres_medico,
+                pn_medico.apellidos AS apellidos_medico,
+                pn_medico.tipoci AS tipoci_medico,
+                pn_medico.cedula AS cedula_medico,
+                cm.cant_sesions AS sesiones_planificadas,
+                cm.status AS status,
+                -- Obtener la última próxima sesión
+                ultima_sesion.proxima_sesion AS ultima_proxima_cita,
+                ultima_sesion.fecha_sesion AS ultima_fecha_sesion,
+                -- Contar el total de sesiones realizadas
+                (
+                    SELECT COUNT(*) 
+                    FROM sesiones s 
+                    WHERE s.id_conmed = cm.id_conmed
+                ) AS total_sesiones_realizadas
+            FROM consultamedica cm 
+                INNER JOIN paciente p ON cm.pacienteid = p.id_paciente 
+                INNER JOIN datospersonales dp_paciente ON p.dpersonalesid = dp_paciente.id_dpersonales 
+                INNER JOIN persona pn_paciente ON dp_paciente.personaid = pn_paciente.id_persona
+                INNER JOIN usuarios u ON cm.medicoid = u.id_usuario
+                INNER JOIN persona pn_medico ON u.id_persona = pn_medico.id_persona
+                LEFT JOIN LATERAL (
+                    SELECT 
+                        proxima_sesion,
+                        fecha_sesion
+                    FROM sesiones s
+                    WHERE s.id_conmed = cm.id_conmed
+                    ORDER BY s.fecha_sesion DESC NULLS LAST
+                    LIMIT 1
+                ) AS ultima_sesion ON true;
+            `);
+        res.json(rows);
+    } catch (err) {
+        console.error(err);
+        res.status(501).send('Error al obtener los datos');
+    }
+});
+
 app.get('/api/consultasMedicas', async (req, res) => {
     try {
       const { rows } = await pool.query(`
@@ -1379,7 +1632,7 @@ app.get('/api/consultasMedicas', async (req, res) => {
                 ORDER BY s.fecha_sesion DESC NULLS LAST
                 LIMIT 1
             ) AS ultima_sesion ON true;
-      `);
+        `);
         res.json(rows);
     } catch (err) {
         console.error(err);

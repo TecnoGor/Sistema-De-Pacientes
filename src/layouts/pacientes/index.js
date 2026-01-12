@@ -143,14 +143,14 @@ function Pacientes() {
         >
           <Icon>info</Icon>&nbsp;
         </MDButton>
-        <MDButton
+        {/* <MDButton
           onClick={() => generarConsentimiento(paciente.id_persona)}
           variant="text"
           color="info"
           size="large"
         >
           <Icon>print</Icon>&nbsp;
-        </MDButton>
+        </MDButton> */}
         {/* <MDButton variant="text" color="error" size="small">
           <Icon>delete</Icon>&nbsp;Eliminar
         </MDButton> */}

@@ -84,6 +84,7 @@ function InfoCita({ show, close, fetch, id_conmed }) {
     pulso_after: "",
     frespiratoria_after: "",
   });
+  // const estadoConsulta = getConsultaStatus();
   console.log(formData);
   const formatDate = (dateString) => {
     if (!dateString) return "Fecha no disponible";
@@ -98,6 +99,18 @@ function InfoCita({ show, close, fetch, id_conmed }) {
       return "Fecha inválida";
     }
   };
+
+  const getConsultaStatus = () => {
+    if (formInasistencias.inasistencias >= 3) {
+      return "INHABILITADA_POR_INASISTENCIAS";
+    }
+    if (!formData.status_consulta) {
+      return "FINALIZADA";
+    }
+    return "ACTIVA";
+  };
+
+  // Usar en algún lugar si necesitas mostrar el estado
 
   const formatToYYYYMMDD = (dateString) => {
     if (!dateString) return "2025-08-09"; // Fecha por defecto en formato correcto
@@ -150,37 +163,51 @@ function InfoCita({ show, close, fetch, id_conmed }) {
 
   const handleInasistencia = async () => {
     Swal.fire({
-      title: "Seguro que quieres anotar una inasistencia?",
+      title: "¿Seguro que quieres anotar una inasistencia?",
+      text: "Al registrar 3 inasistencias, la consulta se inhabilitará automáticamente.",
       showDenyButton: true,
       showCancelButton: false,
-      confirmButtonText: "Si",
+      confirmButtonText: "Sí",
       denyButtonText: `No`,
-    }).then((result) => {
+    }).then(async (result) => {
       if (result.isConfirmed) {
-        return axios
-          .post(`${API_Host}/api/regInasistencia`, formData, {
+        try {
+          const response = await axios.post(`${API_Host}/api/regInasistencia`, formData, {
             headers: { "Content-Type": "application/json" },
-          })
-          .then((response) => {
-            if (response.status === 201) {
-              Swal.fire({
-                title: "Inasistencia Registrada!",
-                text: "Inasistencia registrada con éxito.",
-                icon: "info",
-                draggable: true,
-              });
-              setStateInasBtt(true);
-              // fetch();
-            }
-          })
-          .catch((error) => {
-            console.error("Error al registrar inasistencia:", error);
-            Swal.fire({
-              title: "Error",
-              text: "No se pudo registrar la inasistencia",
-              icon: "error",
-            });
           });
+
+          if (response.status === 201) {
+            // Obtener las inasistencias actualizadas
+            const inasistenciasActualizadas = await fetchInasistencias();
+
+            Swal.fire({
+              title: "Inasistencia Registrada!",
+              text: `Inasistencia registrada con éxito. Total: ${inasistenciasActualizadas}`,
+              icon: "info",
+              draggable: true,
+            });
+
+            // Verificar si se llegó a 3 inasistencias
+            if (inasistenciasActualizadas >= 3) {
+              // Mostrar mensaje adicional
+              Swal.fire({
+                title: "¡Alerta!",
+                text: "Se ha alcanzado el límite de 3 inasistencias. La consulta será inhabilitada.",
+                icon: "warning",
+                confirmButtonText: "Entendido",
+              });
+            }
+
+            setStateInasBtt(true);
+          }
+        } catch (error) {
+          console.error("Error al registrar inasistencia:", error);
+          Swal.fire({
+            title: "Error",
+            text: "No se pudo registrar la inasistencia",
+            icon: "error",
+          });
+        }
       } else if (result.isDenied) {
         Swal.fire("No se registró una inasistencia", "", "info");
       }
@@ -223,9 +250,76 @@ function InfoCita({ show, close, fetch, id_conmed }) {
     }
   };
 
+  const handleDisabledAuto = async () => {
+    console.log("Auto-deshabilitando cita por 3+ inasistencias: ", formData.codconsul);
+
+    if (formData.status_consulta) {
+      try {
+        const responseUpdate = await axios.post(`${API_Host}/api/updateConsulta`, formData, {
+          headers: { "Content-Type": "application/json" },
+        });
+        if (responseUpdate.status === 201) {
+          // Mostrar mensaje específico para auto-deshabilitación
+          Swal.fire({
+            title: "Consulta Auto-Inhabilitada!",
+            text: `La consulta ha sido automáticamente inhabilitada por alcanzar 3 o más inasistencias.`,
+            icon: "warning",
+            draggable: true,
+            timer: 5000,
+            timerProgressBar: true,
+          });
+          fetch(); // Actualizar la lista de consultas
+        }
+      } catch (error) {
+        console.error("Error al auto-inhabilitar la consulta:", error);
+        Swal.fire({
+          title: "Error al auto-inhabilitar la consulta.",
+          text: error.message,
+          icon: "error",
+          draggable: true,
+        });
+      }
+    }
+  };
+
   const handleSave = async () => {
     // Aquí puedes agregar la lógica para guardar los cambios
+
+    if (formData.fecha_avance) {
+      const fechaAvance = new Date(formData.fecha_avance);
+      const hoy = new Date();
+
+      // Normalizar fechas (establecer a medianoche)
+      const fechaAvanceNormalizada = new Date(
+        fechaAvance.getFullYear(),
+        fechaAvance.getMonth(),
+        fechaAvance.getDate()
+      );
+      const hoyNormalizado = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+
+      // Validar que la fecha no sea anterior a hoy
+      if (fechaAvanceNormalizada < hoyNormalizado) {
+        Swal.fire({
+          title: "Fecha inválida",
+          text: "La fecha de próxima cita no puede ser anterior a hoy.",
+          icon: "error",
+          confirmButtonText: "Aceptar",
+        });
+        return; // Detener el guardado
+      }
+    }
+
     console.log("Guardando cambios...", formData);
+    const validationErrors = validateForm();
+    if (validationErrors.length > 0) {
+      Swal.fire({
+        title: "Errores de validación",
+        html: validationErrors.join("<br>"),
+        icon: "error",
+        confirmButtonText: "Aceptar",
+      });
+      return;
+    }
     try {
       const result = await axios.post(`${API_Host}/api/regSesion`, formData, {
         headers: { "Content-Type": "application/json" },
@@ -252,6 +346,17 @@ function InfoCita({ show, close, fetch, id_conmed }) {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    if (name === "fecha_avance") {
+      if (value && !validateFutureDate(value)) {
+        Swal.fire({
+          title: "Fecha inválida",
+          text: "La fecha de próxima cita no puede ser anterior a hoy.",
+          icon: "error",
+          confirmButtonText: "Aceptar",
+        });
+        console.warn("Fecha de próxima cita inválida");
+      }
+    }
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -272,10 +377,32 @@ function InfoCita({ show, close, fetch, id_conmed }) {
         inasistencias: inasistencias.total_inasistencias,
         fecha_inasistencia: inasistencias.ultima_inasistencia,
       });
-      console.log(`Inasistencias: ${formInasistencias}`);
+
+      // Validar si el botón de inasistencia debe estar deshabilitado
+      if (formInasistencias.fecha_inasistencia) {
+        handleButtonInasistencia();
+      }
+
+      console.log(`Inasistencias: ${inasistencias.total_inasistencias}`);
+
+      // Verificar si las inasistencias son 3 o más y ejecutar handleDisabled
+      if (inasistencias.total_inasistencias >= 3) {
+        console.log(
+          `Ejecutando auto-deshabilitación por ${inasistencias.total_inasistencias} inasistencias`
+        );
+        // Deshabilitar botones inmediatamente
+        setStateInasBtt(true);
+        // Ejecutar handleDisabled automáticamente
+        await handleDisabledAuto();
+      } else {
+        setStateInasBtt(false);
+      }
+
+      return inasistencias.total_inasistencias;
     } catch (err) {
       console.error("Error al obtener datos de inasistencias:", err);
-      setError("Error al cargar los datos de la inasistencias. Inténtelo de nuevo.");
+      setError("Error al cargar los datos de las inasistencias. Inténtelo de nuevo.");
+      return 0;
     } finally {
       setLoading(false);
     }
@@ -323,14 +450,14 @@ function InfoCita({ show, close, fetch, id_conmed }) {
       console.log("📥 Generando consentimiento para paciente ID:", idPaciente);
       const response = await axios({
         method: "post",
-        url: `${API_Host}/api/generar-consentimiento/${idPaciente}`,
+        url: `${API_Host}/api/generar-informe-egreso/${idPaciente}`,
         responseType: "blob", // IMPORTANTE para archivos binarios
       });
 
       console.log("📤 Response recibida");
 
       // Obtener el nombre del archivo
-      let filename = `consentimiento_paciente_${idPaciente}.docx`;
+      let filename = `informe_paciente_${idPaciente}.docx`;
       const contentDisposition = response.headers["content-disposition"];
 
       if (contentDisposition) {
@@ -359,6 +486,51 @@ function InfoCita({ show, close, fetch, id_conmed }) {
       alert("Error al generar el consentimiento: " + error.message);
     }
   };
+
+  const validateFutureDate = (dateString) => {
+    if (!dateString) return true; // Vacío es válido
+
+    const inputDate = new Date(dateString);
+    const today = new Date();
+
+    // Normalizar fechas (quitar horas)
+    const inputNormalized = new Date(
+      inputDate.getFullYear(),
+      inputDate.getMonth(),
+      inputDate.getDate()
+    );
+    const todayNormalized = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+    return inputNormalized >= todayNormalized;
+  };
+
+  const validateForm = () => {
+    const errors = [];
+
+    // Validar fecha de avance
+    if (formData.fecha_avance && !validateFutureDate(formData.fecha_avance)) {
+      errors.push("La fecha de próxima cita no puede ser anterior a hoy");
+    }
+    // Agregar otras validaciones si es necesario
+
+    return errors;
+  };
+
+  useEffect(() => {
+    // Verificar inasistencias cuando se actualice el estado
+    const checkAndDisable = async () => {
+      if (formInasistencias.inasistencias >= 3 && formData.status_consulta) {
+        console.log(
+          `Detectadas ${formInasistencias.inasistencias} inasistencias, auto-deshabilitando...`
+        );
+        await handleDisabledAuto();
+      }
+    };
+
+    if (show && id && formInasistencias.inasistencias > 0) {
+      checkAndDisable();
+    }
+  }, [formInasistencias.inasistencias, show, id, formData.status_consulta]);
 
   useEffect(() => {
     // Función para resetear todo
@@ -473,6 +645,8 @@ function InfoCita({ show, close, fetch, id_conmed }) {
                       color="info"
                       onClick={toggleAdvance}
                       startIcon={<Icon>dataset</Icon>}
+                      disabled={stateInasBtt === true || formInasistencias.inasistencias >= 3}
+                      // disabled={stateInasBtt === true}
                     >
                       Registrar Sesion
                     </MDButton>
@@ -482,7 +656,8 @@ function InfoCita({ show, close, fetch, id_conmed }) {
                       color="error"
                       onClick={() => handleInasistencia()}
                       startIcon={<Icon>delete</Icon>}
-                      disabled={stateInasBtt === true}
+                      disabled={stateInasBtt === true || formInasistencias.inasistencias >= 3}
+                      // disabled={stateInasBtt === true}
                     >
                       Registrar Inasistencias
                     </MDButton>
@@ -525,6 +700,43 @@ function InfoCita({ show, close, fetch, id_conmed }) {
               <MDTypography variant="h6" gutterBottom color="primary">
                 Inasistencias Registradas: {formInasistencias.inasistencias}
               </MDTypography>
+              {formInasistencias.inasistencias >= 3 && (
+                <MDTypography
+                  variant="body2"
+                  gutterBottom
+                  color="error"
+                  sx={{
+                    backgroundColor: "#ffebee",
+                    padding: "10px",
+                    borderRadius: "5px",
+                    marginBottom: "10px",
+                  }}
+                >
+                  ⚠️ Esta consulta ha alcanzado {formInasistencias.inasistencias}
+                  inasistencias y ha sido automáticamente inhabilitada.
+                </MDTypography>
+              )}
+              {formInasistencias.inasistencias === 2 && (
+                <MDTypography
+                  variant="body2"
+                  gutterBottom
+                  color="warning"
+                  sx={{
+                    backgroundColor: "#fff3e0",
+                    padding: "10px",
+                    borderRadius: "5px",
+                    marginBottom: "10px",
+                  }}
+                >
+                  ⚠️ Advertencia: Esta consulta tiene 2 inasistencias. Con una más será
+                  automáticamente inhabilitada.
+                </MDTypography>
+              )}
+              {formInasistencias.fecha_inasistencia && (
+                <MDTypography variant="body2" color="textSecondary">
+                  Última inasistencia: {formatDate(formInasistencias.fecha_inasistencia)}
+                </MDTypography>
+              )}
               <Grid container spacing={3}>
                 {/* <Grid item xs={12} sm={4}>
                   <MDInput
@@ -759,13 +971,23 @@ function InfoCita({ show, close, fetch, id_conmed }) {
                   <Grid item xs={12} sm={4}>
                     <MDTypography style={{ fontSize: "1rem" }}>Proxima Cita</MDTypography>
                     <MDInput
-                      label="Proxima Cita"
+                      label="Próxima Cita"
                       name="fecha_avance"
                       type="date"
-                      value={formData.fecha_avance}
+                      value={formData.fecha_avance || ""}
                       onChange={handleChange}
-                      min={new Date().toISOString().split("T")[0]}
                       fullWidth
+                      min={new Date().toISOString().split("T")[0]}
+                      onBlur={(e) => {
+                        if (e.target.value && !validateFutureDate(e.target.value)) {
+                          e.target.setCustomValidity(
+                            "La fecha de próxima cita no puede ser anterior a hoy"
+                          );
+                        } else {
+                          e.target.setCustomValidity("");
+                        }
+                      }}
+                      required={isAdvance} // Solo requerido cuando se está registrando sesión
                     />
                   </Grid>
                   <Grid item xs={12} sm={12}>

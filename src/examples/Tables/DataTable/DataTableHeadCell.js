@@ -43,10 +43,10 @@ function DataTableHeadCell({ width, children, sorted, align, ...rest }) {
         {...rest}
         position="relative"
         textAlign={align}
-        color={darkMode ? "white" : "secondary"}
-        opacity={0.7}
+        color="black"
+        opacity={1}
         sx={({ typography: { size, fontWeightBold } }) => ({
-          fontSize: size.xxs,
+          fontSize: size.sm,
           fontWeight: fontWeightBold,
           textTransform: "uppercase",
           cursor: sorted && "pointer",

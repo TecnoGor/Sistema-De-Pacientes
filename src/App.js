@@ -164,7 +164,7 @@ export default function App() {
           <Sidenav
             color={sidenavColor}
             brand={(transparentSidenav && !darkMode) || whiteSidenav ? iposLight : iposLight}
-            brandName="Sistema de Camaras Hiperbaricas"
+            brandName="SIRHOS"
             routes={routes.filter(
               (route) => !route.hideWhenUnauthenticated || localStorage.getItem("authToken")
             )}
