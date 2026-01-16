@@ -1585,8 +1585,9 @@ app.get('/api/dashboardProgressPacientes', async (req, res) => {
                     WHERE s.id_conmed = cm.id_conmed
                     ORDER BY s.fecha_sesion DESC NULLS LAST
                     LIMIT 1
-                ) AS ultima_sesion ON true;
-            `);
+                ) AS ultima_sesion ON true
+            WHERE cm.status = true;
+        `);
         res.json(rows);
     } catch (err) {
         console.error(err);
