@@ -7,13 +7,14 @@ import CssBaseline from "@mui/material/CssBaseline";
 import Icon from "@mui/material/Icon";
 import CircularProgress from "@mui/material/CircularProgress";
 import MDBox from "components/MDBox";
-import Sidenav from "examples/Sidenav";
+// import Sidenav from "examples/Sidenav";
 import Configurator from "examples/Configurator";
 import theme from "assets/theme";
 import themeRTL from "assets/theme/theme-rtl";
 import themeDark from "assets/theme-dark";
 import themeDarkRTL from "assets/theme-dark/theme-rtl";
 import rtlPlugin from "stylis-plugin-rtl";
+import { ensureThemeFunctions } from "utils/themeUtils"; // Importar el helper
 import { CacheProvider } from "@emotion/react";
 import createCache from "@emotion/cache";
 import routes from "routes";
@@ -21,11 +22,12 @@ import { useMaterialUIController, setMiniSidenav, setOpenConfigurator } from "co
 import brandWhite from "assets/images/logo-ct.png";
 import iposLight from "assets/images/favicon.png";
 import brandDark from "assets/images/logo-ct-dark.png";
-import Basic from "layouts/authentication/sign-in"; // Asegúrate de que esta ruta es correcta
+import Basic from "layouts/authentication/sign-in";
 import Cover from "layouts/authentication/sign-up";
 import { ProtectedRoute } from "components/ProtectedRoutes";
 import { Dashboard } from "@mui/icons-material";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { useAuth } from "context/AuthContext"; // Importar useAuth
 
 export default function App() {
   const [controller, dispatch] = useMaterialUIController();
@@ -42,23 +44,46 @@ export default function App() {
   const [onMouseEnter, setOnMouseEnter] = useState(false);
   const [rtlCache, setRtlCache] = useState(null);
   const { pathname } = useLocation();
-  const API_Host = process.env.REACT_APP_API_URL;
   const navigate = useNavigate();
 
-  // Usa el hook de autenticación
-  // const { isAuthenticated, loading } = useAuth();
+  // Usar el hook de autenticación
+  const { isAuthenticated, loading, hasPermission } = useAuth();
+
+  // Filtrar rutas según permisos usando useMemo
+  const filteredRoutes = useMemo(() => {
+    // Si está cargando o no autenticado, solo mostrar rutas públicas
+    if (loading || !isAuthenticated) {
+      return routes.filter(
+        (route) => route.type === "collapse" && !route.protected && !route.requiredPermission
+      );
+    }
+
+    // Para usuarios autenticados, filtrar por permisos
+    return routes.filter((route) => {
+      // Si es ruta pública o no protegida, mostrar
+      if (!route.protected) return true;
+
+      // Si requiere permiso específico, verificar
+      if (route.requiredPermission) {
+        return hasPermission(route.requiredPermission);
+      }
+
+      // Si no requiere permiso específico pero está protegida, mostrar
+      return true;
+    });
+  }, [isAuthenticated, loading, hasPermission]);
 
   useEffect(() => {
-    // Verificar autenticación al cargar el dashboard
-    const token = localStorage.getItem("authToken");
+    // Redirigir si no está autenticado y no está en páginas de autenticación
     if (
-      !token &&
-      pathname !== "/authentication/sign-in" &&
-      pathname !== "/authentication/sign-up"
+      !loading &&
+      !isAuthenticated &&
+      !pathname.includes("/authentication/") &&
+      pathname !== "/"
     ) {
       navigate("/authentication/sign-in");
     }
-  }, [navigate, pathname]);
+  }, [isAuthenticated, loading, pathname, navigate]);
 
   // Cache for the rtl
   useMemo(() => {
@@ -112,7 +137,17 @@ export default function App() {
             exact
             path={route.route}
             element={
-              route.protected ? <ProtectedRoute>{route.component}</ProtectedRoute> : route.component
+              route.protected || route.requiredPermission ? (
+                <ProtectedRoute
+                  requiredPermission={route.requiredPermission}
+                  requiredAny={route.requiredAny}
+                  requiredAll={route.requiredAll}
+                >
+                  {route.component}
+                </ProtectedRoute>
+              ) : (
+                route.component
+              )
             }
             key={route.key}
           />
@@ -147,59 +182,98 @@ export default function App() {
   );
 
   // Mostrar loading mientras verifica autenticación
-  // if (loading) {
-  //   return (
-  //     <MDBox display="flex" justifyContent="center" alignItems="center" height="100vh">
-  //       <div>Cargando...</div>
-  //     </MDBox>
-  //   );
-  // }
+  if (loading) {
+    return (
+      <MDBox display="flex" justifyContent="center" alignItems="center" height="100vh">
+        <CircularProgress color="info" />
+      </MDBox>
+    );
+  }
 
   // Función para renderizar el contenido principal
+  useMemo(() => {
+    const cacheRtl = createCache({
+      key: "rtl",
+      stylisPlugins: [rtlPlugin],
+    });
+
+    setRtlCache(cacheRtl);
+  }, []);
+
+  const getSafeTheme = () => {
+    let selectedTheme;
+
+    if (direction === "rtl") {
+      selectedTheme = darkMode ? themeDarkRTL : themeRTL;
+    } else {
+      selectedTheme = darkMode ? themeDark : theme;
+    }
+
+    // Asegurar que el tema tenga todas las funciones necesarias
+    return ensureThemeFunctions(selectedTheme);
+  };
+
+  const currentTheme = getSafeTheme();
+
   const renderContent = (themeToUse) => (
     <ThemeProvider theme={themeToUse}>
       <CssBaseline />
-      {layout === "dashboard" && (
+      {layout === "dashboard" && isAuthenticated && (
         <>
-          <Sidenav
+          {/* <Sidenav
             color={sidenavColor}
             brand={(transparentSidenav && !darkMode) || whiteSidenav ? iposLight : iposLight}
             brandName="SIRHOS"
-            routes={routes.filter(
-              (route) => !route.hideWhenUnauthenticated || localStorage.getItem("authToken")
-            )}
+            routes={filteredRoutes}
             onMouseEnter={handleOnMouseEnter}
             onMouseLeave={handleOnMouseLeave}
-          />
+          /> */}
           <Configurator />
           {/* {configsButton} */}
         </>
       )}
       {layout === "vr" && <Configurator />}
       <Routes>
-        {getRoutes(routes)}
+        {getRoutes(filteredRoutes)}
         <Route path="/authentication/sign-in" element={<Basic />} />
         <Route path="/authentication/sign-up" element={<Cover />} />
         <Route
-          path="*"
+          path="/"
           element={
-            localStorage.getItem("authToken") ? (
+            isAuthenticated ? (
               <Navigate to="/dashboard" replace />
             ) : (
               <Navigate to="/authentication/sign-in" replace />
             )
           }
         />
-        <Route path="*" element={<Navigate to="/dashboard" />} />
+        <Route
+          path="*"
+          element={
+            isAuthenticated ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <Navigate to="/authentication/sign-in" replace />
+            )
+          }
+        />
       </Routes>
     </ThemeProvider>
   );
 
+  // Resto de tu código sin cambios...
+  // [Mantén el resto de tu App.js igual, pero usa currentTheme]
+
+  // const renderContent = () => (
+  //   <ThemeProvider theme={currentTheme}>
+  //     <CssBaseline />
+  //     {/* ... resto del contenido */}
+  //   </ThemeProvider>
+  // );
+
   return direction === "rtl" ? (
-    <CacheProvider value={rtlCache}>
-      {renderContent(darkMode ? themeDarkRTL : themeRTL)}
-    </CacheProvider>
+    <CacheProvider value={rtlCache}> {renderContent(currentTheme)} </CacheProvider>
   ) : (
-    renderContent(darkMode ? themeDark : theme)
+    renderContent(currentTheme)
   );
 }

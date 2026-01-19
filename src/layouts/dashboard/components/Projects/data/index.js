@@ -186,7 +186,8 @@ export default function Data() {
       { Header: "Médico", accessor: "medico", width: "20%", align: "left" },
       { Header: "Estado", accessor: "estado", width: "15%", align: "center" },
       { Header: "Proxima Cita", accessor: "fecha", width: "15%", align: "center" },
-      { Header: "Progreso", accessor: "acciones", width: "30%", align: "center" },
+      { Header: "Sesiones Planificadas", accessor: "sesiones", width: "15%", align: "center" },
+      { Header: "Progreso", accessor: "progressBar", width: "30%", align: "center" },
     ],
 
     rows: citas.map((cita) => ({
@@ -210,13 +211,14 @@ export default function Data() {
       ),
       estado: getEstadoBadge(cita.status),
       fecha: fechaMuestra(cita.ultima_proxima_cita, cita.fechaconsul),
-      acciones: (
+      sesiones: cita.sesiones_planificadas,
+      progressBar: (
         <MDBox width="8rem" textAlign="left">
           <MDProgress
             value={getPorcentaje(cita.total_sesiones_realizadas, cita.sesiones_planificadas)}
             color="info"
             variant="gradient"
-            label={false}
+            label={true}
           />
         </MDBox>
         // <MDBox display="flex" gap={1}>

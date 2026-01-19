@@ -1548,6 +1548,40 @@ app.get('/api/consultaMedica/:id_conmed', async (req, res) => {
   }
 });
 
+app.get('/api/barStadisticsDayWeek', async (req, res) => {
+    try {
+        const { rows } = await pool.query(
+            `SELECT 
+                EXTRACT(YEAR FROM cm.fechaconsul) AS anio,
+                EXTRACT(WEEK FROM cm.fechaconsul) AS numero_semana,
+                CONCAT('Semana ', EXTRACT(WEEK FROM cm.fechaconsul), ' - ', EXTRACT(YEAR FROM cm.fechaconsul)) AS semana,
+                MIN(cm.fechaconsul)::date AS fecha_inicio_semana,
+                MAX(cm.fechaconsul)::date AS fecha_fin_semana,
+                COUNT(DISTINCT cm.id_conmed) AS total_consultas,
+                COUNT(ses.id_sesion) AS total_sesiones,
+                -- Cantidad por día de la semana (DOW: 0=domingo, 1=lunes, ..., 6=sábado)
+                COUNT(CASE WHEN EXTRACT(DOW FROM cm.fechaconsul) = 0 THEN 1 END) AS domingo,
+                COUNT(CASE WHEN EXTRACT(DOW FROM cm.fechaconsul) = 1 THEN 1 END) AS lunes,
+                COUNT(CASE WHEN EXTRACT(DOW FROM cm.fechaconsul) = 2 THEN 1 END) AS martes,
+                COUNT(CASE WHEN EXTRACT(DOW FROM cm.fechaconsul) = 3 THEN 1 END) AS miercoles,
+                COUNT(CASE WHEN EXTRACT(DOW FROM cm.fechaconsul) = 4 THEN 1 END) AS jueves,
+                COUNT(CASE WHEN EXTRACT(DOW FROM cm.fechaconsul) = 5 THEN 1 END) AS viernes,
+                COUNT(CASE WHEN EXTRACT(DOW FROM cm.fechaconsul) = 6 THEN 1 END) AS sabado
+            FROM consultamedica cm
+                LEFT JOIN sesiones ses ON ses.id_conmed = cm.id_conmed
+            WHERE cm.fechaconsul IS NOT NULL
+            GROUP BY 
+                EXTRACT(YEAR FROM cm.fechaconsul),
+                EXTRACT(WEEK FROM cm.fechaconsul)
+            ORDER BY anio DESC, numero_semana DESC;`
+        );
+        res.json(rows);
+    } catch (error) {
+        console.error(err);
+        res.status(501).send('Error al obtener los datos');
+    }
+});
+
 app.get('/api/dashboardProgressPacientes', async (req, res) => {
     try {
         const { rows } = await pool.query(`

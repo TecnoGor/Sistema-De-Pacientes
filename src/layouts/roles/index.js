@@ -161,8 +161,11 @@ function Roles() {
     descript: rol.descript,
     actions: (
       <MDBox display="flex" gap={1}>
-        <MDButton variant="text" color="info" size="small">
-          <Icon>edit</Icon>&nbsp;Editar
+        <MDButton variant="text" color="info" size="large" title="Editar rol.">
+          <Icon>edit</Icon>
+        </MDButton>
+        <MDButton variant="text" color="error" size="large" title="Inhabilitar rol.">
+          <Icon>cancel</Icon>
         </MDButton>
         {/* <MDButton variant="text" color="error" size="small">
           <Icon>delete</Icon>&nbsp;Eliminar

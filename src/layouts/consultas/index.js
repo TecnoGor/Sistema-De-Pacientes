@@ -149,6 +149,7 @@ function Consultas() {
         variant="text"
         color="info"
         size="large"
+        title="Imprimir Consentimiento Informado."
       >
         <Icon>print</Icon>&nbsp;
       </MDButton>

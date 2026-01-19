@@ -64,9 +64,6 @@ function Projects() {
       <MDBox display="flex" justifyContent="space-between" alignItems="center" p={3}>
         <MDBox>
           <MDTypography variant="h6" gutterBottom>
-            Sesiones por consulta
-          </MDTypography>
-          <MDBox display="flex" alignItems="center" lineHeight={0}>
             <Icon
               sx={{
                 fontWeight: "bold",
@@ -76,9 +73,12 @@ function Projects() {
             >
               done
             </Icon>
-            <MDTypography variant="button" fontWeight="regular" color="text">
+            &nbsp;Sesiones por consulta
+          </MDTypography>
+          <MDBox display="flex" alignItems="center" lineHeight={0}>
+            {/* <MDTypography variant="button" fontWeight="regular" color="text">
               &nbsp;<strong>30 done</strong> this month
-            </MDTypography>
+            </MDTypography> */}
           </MDBox>
         </MDBox>
         <MDBox color="text" px={2}>
