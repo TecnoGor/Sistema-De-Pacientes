@@ -35,15 +35,27 @@ import DataTable from "examples/Tables/DataTable";
 // Data
 import authorsTableData from "layouts/tables/data/authorsTableData";
 import projectsTableData from "layouts/tables/data/projectsTableData";
+import RolesFunctions from "examples/Modals/RolesFunction";
+import RegRol from "examples/Modals/RolesFunction/RegRol";
 
 function Roles() {
   const [show, setShow] = useState(false);
+  const [showRegRole, setShowRegRole] = useState(false);
+  const [getId, setGetId] = useState();
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const handleClose = () => setShow(false);
   let i = 1;
-  const handleShow = () => setShow(true);
+  const handleShowRegRole = () => setShowRegRole(true);
+  const handleCloseRegRole = () => setShowRegRole(false);
+  const handleClose = () => {
+    setShow(false);
+    setGetId(null);
+  };
+  const handleShow = (a) => {
+    setGetId(a);
+    setShow(true);
+  };
   // const { columns, rows } = authorsTableData();
   // const { columns: pColumns, rows: pRows } = projectsTableData();
   const API_Host = process.env.REACT_APP_API_URL;
@@ -161,8 +173,14 @@ function Roles() {
     descript: rol.descript,
     actions: (
       <MDBox display="flex" gap={1}>
-        <MDButton variant="text" color="info" size="small">
-          <Icon>edit</Icon>&nbsp;Editar
+        <MDButton
+          onClick={() => handleShow(rol.id_rol)}
+          variant="text"
+          color="info"
+          size="large"
+          title="Asignar Permisos"
+        >
+          <Icon>edit</Icon>
         </MDButton>
         {/* <MDButton variant="text" color="error" size="small">
           <Icon>delete</Icon>&nbsp;Eliminar
@@ -215,12 +233,14 @@ function Roles() {
                 borderRadius="lg"
                 coloredShadow="info"
               >
-                <MDButton variant="gradient" color="dark" onClick={handleShow}>
+                <MDButton variant="gradient" color="dark" onClick={handleShowRegRole}>
                   <Icon sx={{ fontWeight: "bold" }}>person</Icon>
                   &nbsp;Registrar Roles
                 </MDButton>
               </MDBox>
               <MDBox pt={3}>
+                <RolesFunctions close={handleClose} show={show} id_rol={getId} />
+                <RegRol close={handleCloseRegRole} show={showRegRole} fetchRoles={fetchRoles} />
                 {/* <RegUsuarios close={handleClose} show={show} fetch={fetchUsers} /> */}
                 {/* <Carnet number={4562112245947852} holder="jack peterson" expires="11/22" /> */}
               </MDBox>
@@ -228,7 +248,7 @@ function Roles() {
                 {loading ? (
                   <MDBox p={3} textAlign="center">
                     <MDTypography variant="body2" color="text">
-                      Cargando usuarios...
+                      Cargando roles...
                     </MDTypography>
                   </MDBox>
                 ) : error ? (
@@ -243,7 +263,7 @@ function Roles() {
                 ) : roles.length === 0 ? (
                   <MDBox p={3} textAlign="center">
                     <MDTypography variant="body2" color="text">
-                      No hay usuarios registrados
+                      No hay roles registrados
                     </MDTypography>
                   </MDBox>
                 ) : (

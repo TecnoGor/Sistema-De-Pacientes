@@ -1,4 +1,6 @@
 import React from "react";
+import { useEffect, useState } from "react";
+import axios from "axios";
 import PropTypes from "prop-types";
 import "bootstrap/dist/css/bootstrap.min.css";
 import Form from "react-bootstrap/Form";
@@ -7,8 +9,31 @@ import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import MDBox from "components/MDBox";
 import MDInput from "components/MDInput";
+import Swal from "sweetalert2";
 
 function UsuarioForm({ formDataUsuario, handleChange }) {
+  const [roles, setRoles] = useState([]);
+  const API_Host = process.env.REACT_APP_API_URL;
+
+  useEffect(() => {
+    const cargarRoles = async () => {
+      try {
+        const response = await axios.get(`${API_Host}/api/roles`);
+        console.log(response.data);
+        setRoles(response.data);
+      } catch (error) {
+        console.error("Error al cargar Roles:", error);
+        Swal.fire({
+          title: "Error",
+          text: "No se pudieron cargar los Roles",
+          icon: "error",
+          draggable: true,
+        });
+      }
+    };
+    cargarRoles();
+  }, []);
+
   return (
     <Form>
       <MDBox mb={2}>
@@ -91,9 +116,12 @@ function UsuarioForm({ formDataUsuario, handleChange }) {
             name="rol"
             onChange={handleChange}
           >
-            <option disabled>Seleccione...</option>
-            <option value="2">Enfermero</option>
-            <option value="3">Medico</option>
+            <option value="">Seleccione un médico...</option>
+            {roles.map((role) => (
+              <option key={role.id_rol} value={role.id_rol}>
+                {role.nrol}
+              </option>
+            ))}
           </Form.Select>
         </Form.Group>
       </MDBox>

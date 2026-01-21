@@ -33,6 +33,7 @@ const routes = [
     icon: <Icon fontSize="small">personalinjury</Icon>,
     route: "/pacientes",
     component: <Pacientes />,
+    funcionid: 4,
   },
   {
     type: "collapse",
@@ -41,6 +42,7 @@ const routes = [
     icon: <Icon fontSize="small">medication</Icon>,
     route: "/consultas",
     component: <Consultas />,
+    funcionid: 5,
   },
   {
     type: "collapse",
@@ -49,6 +51,7 @@ const routes = [
     icon: <Icon fontSize="small">event</Icon>,
     route: "/atenciones",
     component: <Citas />,
+    funcionid: 6,
   },
   {
     type: "collapse",
@@ -57,6 +60,7 @@ const routes = [
     icon: <Icon fontSize="small">masks</Icon>,
     route: "/especialistas",
     component: <Especialistas />,
+    funcionid: 7,
   },
   // {
   //   type: "collapse",
@@ -90,6 +94,7 @@ const routes = [
     icon: <Icon fontSize="small">group</Icon>,
     route: "/usuarios",
     component: <Users />,
+    funcionid: 1,
   },
   {
     type: "collapse",
@@ -98,6 +103,7 @@ const routes = [
     icon: <Icon fontSize="small">gamepad</Icon>,
     route: "/roles",
     component: <Roles />,
+    funcionid: 2,
   },
   // {
   //   type: "collapse",

@@ -39,7 +39,7 @@ function ConsultaForm({ formDataConsulta, handleChange }) {
       </MDTypography>
       <hr />
       <Row>
-        <Col>
+        {/* <Col>
           <Form.Group className="mb-3" controlId="apellidos.ControlInput3">
             <Form.Label>Código de Consulta</Form.Label>
             <Form.Control
@@ -50,7 +50,7 @@ function ConsultaForm({ formDataConsulta, handleChange }) {
               onChange={handleChange}
             />
           </Form.Group>
-        </Col>
+        </Col> */}
         <Col>
           <Form.Group className="mb-3" controlId="apellidos.ControlInput3">
             <Form.Label>Fecha de Consulta</Form.Label>
