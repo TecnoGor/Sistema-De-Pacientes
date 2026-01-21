@@ -140,7 +140,6 @@ function Pacientes() {
           variant="text"
           color="info"
           size="large"
-          title="Detalles"
         >
           <Icon>info</Icon>&nbsp;
         </MDButton>

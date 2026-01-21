@@ -24,7 +24,6 @@ import axios from "axios";
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import MDButton from "components/MDButton";
-import Tooltip from "@mui/material/Tooltip";
 
 // Material Dashboard 2 React example components
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
@@ -97,11 +96,8 @@ function Users() {
     fechacreacion: formatDateForDisplay(user.fechacreacion),
     actions: (
       <MDBox display="flex" gap={1}>
-        <MDButton variant="text" color="info" size="large" title="Editar Usuario">
-          <Icon>edit</Icon>
-        </MDButton>
-        <MDButton variant="text" color="error" size="large" title="Inhabilitar Usuario">
-          <Icon>cancel</Icon>
+        <MDButton variant="text" color="info" size="small">
+          <Icon>edit</Icon>&nbsp;Editar
         </MDButton>
         {/* <MDButton variant="text" color="error" size="small">
           <Icon>delete</Icon>&nbsp;Eliminar

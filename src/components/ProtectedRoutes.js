@@ -1,62 +1,28 @@
-import React from "react";
-import { Navigate } from "react-router-dom";
-import { useAuth } from "context/AuthContext";
-import PermissionError from "components/PermissionError";
+import { useContext } from "react";
+import { Navigate, useLocation } from "react-router-dom";
+import { AuthContext } from "context/AuthContext";
+import MDBox from "./MDBox";
+import { CircularProgress } from "@mui/material";
 import PropTypes from "prop-types";
 
-export const ProtectedRoute = ({
-  children,
-  requiredPermission,
-  requiredAny = [],
-  requiredAll = [],
-  redirectTo = "/authentication/sign-in",
-  moduleName = "",
-}) => {
-  const {
-    isAuthenticated,
-    loading,
-    hasPermission,
-    hasAnyPermission,
-    hasAllPermissions,
-    permissions,
-  } = useAuth();
+export const ProtectedRoute = ({ children, roles = [] }) => {
+  const { isAuthenticated, user, loading } = useContext(AuthContext);
+  const location = useLocation();
 
   if (loading) {
     return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh",
-        }}
-      >
-        <div>Cargando...</div>
-      </div>
+      <MDBox display="flex" justifyContent="center" alignItems="center" height="100vh">
+        <CircularProgress color="info" />
+      </MDBox>
     );
   }
 
-  // Verificar autenticación
   if (!isAuthenticated) {
-    return <Navigate to={redirectTo} replace />;
+    return <Navigate to="/authentication/sign-in" state={{ from: location }} replace />;
   }
 
-  // Verificar si requiere un permiso específico
-  if (requiredPermission && !hasPermission(requiredPermission)) {
-    // En lugar de redirigir, mostrar mensaje de error
-    return <PermissionError requiredPermission={requiredPermission} moduleName={moduleName} />;
-  }
-
-  // Verificar si requiere alguno de varios permisos
-  if (requiredAny.length > 0 && !hasAnyPermission(requiredAny)) {
-    const missing = requiredAny.filter((perm) => !permissions.includes(perm));
-    return <PermissionError missingPermissions={missing} moduleName={moduleName} />;
-  }
-
-  // Verificar si requiere todos los permisos
-  if (requiredAll.length > 0 && !hasAllPermissions(requiredAll)) {
-    const missing = requiredAll.filter((perm) => !permissions.includes(perm));
-    return <PermissionError missingPermissions={missing} moduleName={moduleName} />;
+  if (roles.length > 0 && !roles.includes(user.rol)) {
+    return <Navigate to="/unauthorized" replace />;
   }
 
   return children;
@@ -64,19 +30,12 @@ export const ProtectedRoute = ({
 
 ProtectedRoute.propTypes = {
   children: PropTypes.node.isRequired,
-  requiredPermission: PropTypes.string,
-  requiredAny: PropTypes.arrayOf(PropTypes.string),
-  requiredAll: PropTypes.arrayOf(PropTypes.string),
-  redirectTo: PropTypes.string,
-  moduleName: PropTypes.string,
+  roles: PropTypes.arrayOf(PropTypes.string),
 };
 
+// Valores por defecto para las props
 ProtectedRoute.defaultProps = {
-  requiredPermission: "",
-  requiredAny: [],
-  requiredAll: [],
-  redirectTo: "/authentication/sign-in",
-  moduleName: "",
+  roles: [],
 };
 
 export default ProtectedRoute;
