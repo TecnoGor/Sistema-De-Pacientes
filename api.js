@@ -998,7 +998,8 @@ app.post('/api/regPacientes', upload.single('referencia'), async (req, res) => {
 });
 
 app.post('/api/regConsultas', async (req, res) => {
-    const { ci, pacienteId, firstname, lastname, codconsul, fechaConsul, motivo, sesiones, tratment, medicoid, status } = req.body;
+    const { ci, pacienteId, firstname, lastname, fechaConsul, motivo, sesiones, tratment, medicoid, status } = req.body;
+    const codconsul = "CH-" + ci;
     const medvint= parseInt(medicoid);
     try {
         const result = await pool.query(
@@ -1305,7 +1306,7 @@ app.post('/api/regRol', async (req, res) => {
 
     try {
         const result = await pool.query(
-            'INSERT INTO avance_consultas (nrol, status, descript) VALUES ($1, $2, $3) RETURNING *',
+            'INSERT INTO roles (nrol, status, descript) VALUES ($1, $2, $3) RETURNING *',
             [nrol, status, descript]
         );
         res.status(201).json({
@@ -1332,6 +1333,16 @@ app.get('/api/roles', async (req, res) => {
     }
 });
 
+app.get('/api/funciones', async (req, res) => {
+    try {
+        const { rows } = await pool.query('SELECT id_funcion, nfuncion FROM funciones');
+        res.json(rows);
+    } catch (err) {
+        console.error(err);
+        res.status(501).send('Error al obtener las funciones');
+    }
+});
+
 // Ruta para iniciar sesión
 app.post('/login', async (req, res) => {
     const { username, password } = req.body;
@@ -1354,7 +1365,138 @@ app.post('/login', async (req, res) => {
     }
 });
 
-app.post('verify-token', async (req, res) => {
+// Cambiamos el path para que coincida con lo que espera tu componente (plural /permissions)
+app.get('/roles/:id_rol/permissions', async (req, res) => {
+    try {
+        const { id_rol } = req.params; // Extraemos el ID de la URL
+        const authHeader = req.headers.authorization;
+        const token = authHeader && authHeader.split(' ')[1];
+
+        if (!token) return res.status(401).json({ success: false, message: "No token provided" });
+
+        // Verificamos el token (aunque no usemos el decoded.id, asegura que la petición es legal)
+        jwt.verify(token, SECRET_KEY);
+
+        // 1. Obtenemos las funciones ASIGNADAS a este rol
+        const assignedResult = await pool.query(
+            `SELECT f.id_funcion, f.nfuncion 
+             FROM funciones f
+             INNER JOIN rolfuncion rf ON f.id_funcion = rf.funcionid
+             WHERE rf.rolid = $1`,
+            [id_rol]
+        );
+
+        // 2. Obtenemos las funciones DISPONIBLES (las que NO tiene el rol)
+        // Esto es vital para el componente de gestión de permisos que armamos antes
+        const availableResult = await pool.query(
+            `SELECT id_funcion, nfuncion 
+             FROM funciones 
+             WHERE id_funcion NOT IN (
+                 SELECT funcionid FROM rolfuncion WHERE rolid = $1
+             )`,
+            [id_rol]
+        );
+
+        res.json({
+            success: true,
+            assigned: assignedResult.rows,  // Array de objetos {id_funcion, nfuncion}
+            available: availableResult.rows // Array de objetos {id_funcion, nfuncion}
+        });
+
+    } catch (err) {
+        console.error("Error en get permissions:", err);
+        res.status(500).json({ success: false, message: "Error interno del servidor" });
+    }
+});
+
+app.post('/roles/assign-permission', async (req, res) => {
+    try {
+        const { rolid, funcionid } = req.body; // Datos enviados desde el modal
+        const authHeader = req.headers.authorization;
+        const token = authHeader && authHeader.split(' ')[1];
+
+        if (!token) return res.status(401).json({ success: false });
+
+        // Verificamos el token para seguridad
+        jwt.verify(token, SECRET_KEY);
+
+        // Insertamos la relación en la tabla intermedia
+        // Usamos ON CONFLICT para evitar errores si el permiso ya existe
+        await pool.query(
+            `INSERT INTO rolfuncion (rolid, funcionid) 
+             VALUES ($1, $2) 
+             ON CONFLICT DO NOTHING`, 
+            [rolid, funcionid]
+        );
+
+        res.json({
+            success: true,
+            message: "Permiso asignado correctamente"
+        });
+    } catch (err) {
+        console.error("Error al asignar permiso:", err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+app.delete('/roles/remove-permission', async (req, res) => {
+    try {
+        const { rolid, funcionid } = req.body;
+        const authHeader = req.headers.authorization;
+        const token = authHeader && authHeader.split(' ')[1];
+
+        if (!token) return res.status(401).json({ success: false });
+
+        jwt.verify(token, SECRET_KEY);
+
+        // Eliminamos la fila específica
+        await pool.query(
+            `DELETE FROM rolfuncion 
+             WHERE rolid = $1 AND funcionid = $2`, 
+            [rolid, funcionid]
+        );
+
+        res.json({
+          success: true, 
+          message: "Permiso removido correctamente" 
+        });
+    } catch (err) {
+        console.error("Error al eliminar permiso:", err);
+        res.status(500).json({ success: false });
+    }
+});
+
+app.post('/verify-permissions', async (req, res) => {
+    try {
+        const authHeader = req.headers.authorization;
+        const token = authHeader && authHeader.split(' ')[1]; // Asegúrate del espacio en el split
+
+        if (!token) return res.status(401).json({ valid: false });
+
+        const decoded = jwt.verify(token, SECRET_KEY);
+        const result = await pool.query(
+            `SELECT rf.funcionid 
+             FROM usuarios u
+             JOIN rolfuncion rf ON rf.rolid = u.rolid
+             WHERE u.id_usuario = $1`, 
+            [decoded.id_usuario]
+        );
+
+        // EXTRAEMOS TODOS LOS IDs EN UN ARRAY
+        const permissionsArray = result.rows.map(row => row.funcionid);
+
+        res.json({
+            valid: true,
+            permissions: permissionsArray, // ESTO es lo que usará includes() en React
+            nuser: decoded.nuser
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ valid: false });
+    }
+});
+
+app.post('/verify-token', async (req, res) => {
     try {
         const token = req.headers.authorization?.split('')[1];
         if (!token) return res.json({ valid: false });
@@ -1373,6 +1515,7 @@ app.post('verify-token', async (req, res) => {
             }
         })
     } catch (err) {
+        console.log(err);
         res.json({ valid: false });
     }
 });

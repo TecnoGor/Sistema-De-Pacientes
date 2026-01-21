@@ -39,26 +39,138 @@ export default function App() {
     whiteSidenav,
     darkMode,
   } = controller;
+  const [userPermissions, setUserPermissions] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [onMouseEnter, setOnMouseEnter] = useState(false);
   const [rtlCache, setRtlCache] = useState(null);
   const { pathname } = useLocation();
   const API_Host = process.env.REACT_APP_API_URL;
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const verifyAndLoadPermissions = async () => {
+      const token = localStorage.getItem("authToken");
+
+      // Si no hay token, solo redirigimos si no estamos ya en login/registro
+      if (!token) {
+        if (pathname !== "/authentication/sign-in" && pathname !== "/authentication/sign-up") {
+          navigate("/authentication/sign-in", { replace: true });
+        }
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/verify-permissions`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        const data = await response.json();
+
+        if (data.valid) {
+          setUserPermissions(data.permissions);
+          // Si el usuario está en login pero ya tiene token válido, lo mandamos dentro
+          if (pathname === "/authentication/sign-in" || pathname === "/authentication/sign-up") {
+            navigate("/dashboard", { replace: true });
+          }
+        } else {
+          localStorage.removeItem("authToken");
+          navigate("/authentication/sign-in", { replace: true });
+        }
+      } catch (error) {
+        console.error("Auth error:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    verifyAndLoadPermissions();
+  }, [pathname]);
   // Usa el hook de autenticación
   // const { isAuthenticated, loading } = useAuth();
 
-  useEffect(() => {
-    // Verificar autenticación al cargar el dashboard
-    const token = localStorage.getItem("authToken");
-    if (
-      !token &&
-      pathname !== "/authentication/sign-in" &&
-      pathname !== "/authentication/sign-up"
-    ) {
-      navigate("/authentication/sign-in");
-    }
-  }, [navigate, pathname]);
+  // useEffect(() => {
+  //   const verifyUser = async () => {
+  //     const token = localStorage.getItem("authToken");
+
+  //     // Si no hay token y no está en login/registro, salir a login
+  //     if (!token) {
+  //       if (pathname !== "/authentication/sign-in" && pathname !== "/authentication/sign-up") {
+  //         navigate("/authentication/sign-in", { replace: true });
+  //       }
+  //       setLoading(false);
+  //       return;
+  //     }
+
+  //     try {
+  //       const response = await fetch(`${process.env.REACT_APP_API_URL}/verify-permissions`, {
+  //         method: "POST",
+  //         headers: {
+  //           Authorization: `Bearer ${token}`,
+  //           "Content-Type": "application/json",
+  //         },
+  //       });
+  //       const data = await response.json();
+  //       if (data.valid) {
+  //         setUserPermissions(data.permissions);
+  //       } else {
+  //         localStorage.removeItem("authToken");
+  //         navigate("/authentication/sign-in", { replace: true });
+  //       }
+  //     } catch (error) {
+  //       console.error("Security verify error", error);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+
+  //   verifyUser();
+  // }, [navigate]);
+
+  // useEffect(() => {
+  //   const checkPermissions = async () => {
+  //     const token = localStorage.getItem("authToken");
+  //     if (!token) {
+  //       setLoading(false);
+  //       return;
+  //     }
+
+  //     try {
+  //       const response = await fetch(`${API_Host}/verify-permissions`, {
+  //         method: "POST",
+  //         headers: {
+  //           Authorization: `Bearer ${token}`,
+  //           "Content-Type": "application/json",
+  //         },
+  //       });
+  //       const data = await response.json();
+
+  //       if (data.valid) {
+  //         setUserPermissions(data.permissions);
+  //       }
+  //     } catch (error) {
+  //       console.error("Error validando permisos", error);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+
+  //   checkPermissions();
+  // }, [API_Host]);
+
+  const filteredRoutes = useMemo(() => {
+    return routes.filter((route) => {
+      // Si la ruta no requiere funcionid (es pública), se muestra
+      if (!route.funcionid) return true;
+      // Si el id de la ruta está en el array de permisos del usuario
+      return userPermissions.includes(route.funcionid);
+    });
+  }, [userPermissions]);
+
+  // if (loading) return <CircularProgress />;
 
   // Cache for the rtl
   useMemo(() => {
@@ -78,7 +190,7 @@ export default function App() {
     }
   };
 
-  // Close sidenav when mouse leave mini sidenav
+  // Close sidenav when mouse leave mini sidena
   const handleOnMouseLeave = () => {
     if (onMouseEnter) {
       setMiniSidenav(dispatch, true);
@@ -146,6 +258,13 @@ export default function App() {
     </MDBox>
   );
 
+  const currentTheme = useMemo(() => {
+    if (direction === "rtl") {
+      return darkMode ? themeDarkRTL : themeRTL;
+    }
+    return darkMode ? themeDark : theme;
+  }, [direction, darkMode]);
+
   // Mostrar loading mientras verifica autenticación
   // if (loading) {
   //   return (
@@ -156,6 +275,25 @@ export default function App() {
   // }
 
   // Función para renderizar el contenido principal
+
+  // if (loading) {
+  //   return (
+  //     <MDBox display="flex" justifyContent="center" alignItems="center" height="100vh">
+  //       <CircularProgress />
+  //     </MDBox>
+  //   );
+  // }
+  if (loading) {
+    return (
+      <ThemeProvider theme={currentTheme}>
+        <CssBaseline />
+        <MDBox display="flex" justifyContent="center" alignItems="center" height="100vh">
+          <CircularProgress color="info" />
+        </MDBox>
+      </ThemeProvider>
+    );
+  }
+
   const renderContent = (themeToUse) => (
     <ThemeProvider theme={themeToUse}>
       <CssBaseline />
@@ -165,9 +303,7 @@ export default function App() {
             color={sidenavColor}
             brand={(transparentSidenav && !darkMode) || whiteSidenav ? iposLight : iposLight}
             brandName="SIRHOS"
-            routes={routes.filter(
-              (route) => !route.hideWhenUnauthenticated || localStorage.getItem("authToken")
-            )}
+            routes={filteredRoutes}
             onMouseEnter={handleOnMouseEnter}
             onMouseLeave={handleOnMouseLeave}
           />
@@ -177,20 +313,19 @@ export default function App() {
       )}
       {layout === "vr" && <Configurator />}
       <Routes>
-        {getRoutes(routes)}
+        {getRoutes(filteredRoutes)}
         <Route path="/authentication/sign-in" element={<Basic />} />
         <Route path="/authentication/sign-up" element={<Cover />} />
         <Route
           path="*"
           element={
             localStorage.getItem("authToken") ? (
-              <Navigate to="/dashboard" replace />
+              <Navigate to={filteredRoutes[0]?.route || "/authentication/sign-in"} replace />
             ) : (
               <Navigate to="/authentication/sign-in" replace />
             )
           }
         />
-        <Route path="*" element={<Navigate to="/dashboard" />} />
       </Routes>
     </ThemeProvider>
   );
