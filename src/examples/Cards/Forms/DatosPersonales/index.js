@@ -1,8 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { Form, Row, Col, FloatingLabel, Button } from "react-bootstrap";
 import RegRepresentante from "examples/Modals/Representantes/RegRepresentante";
 import PropTypes from "prop-types";
+import Swal from "sweetalert2";
 
 function DatosPersonales({ formDataPersonales, handleChange }) {
   // const [formData, setFormData] = useState({
@@ -17,9 +19,82 @@ function DatosPersonales({ formDataPersonales, handleChange }) {
   //   parroquia: "",
   //   direccion: "",
   // });
+  const [estados, setEstados] = useState([]);
+  const [municipios, setMunicipios] = useState([]);
+  const [parroquias, setParroquias] = useState([]);
+  const API_Host = process.env.REACT_APP_API_URL;
   const [show, setShow] = useState(false);
   const handleCloseRep = () => setShow(false);
   const handleShowRep = () => setShow(true);
+
+  useEffect(() => {
+    const cargarEstados = async () => {
+      try {
+        const response = await axios.get(`${API_Host}/api/estados`);
+        console.log(response.data);
+        setEstados(response.data);
+      } catch (error) {
+        console.error("Error al cargar estados:", error);
+        Swal.fire({
+          title: "Error",
+          text: "No se pudieron cargar los estados",
+          icon: "error",
+          draggable: true,
+        });
+      }
+    };
+    const cargarMunicipios = async () => {
+      try {
+        if (formDataPersonales.state !== null || formDataPersonales.state !== 0) {
+          const response = await axios.get(
+            `${API_Host}/api/municipios/${formDataPersonales.state}`
+          );
+          console.log(response.data);
+          setMunicipios(response.data);
+        } else {
+          console.log("Estado Vacio");
+        }
+      } catch (error) {
+        if (formDataPersonales.state !== null || formDataPersonales.state !== 0) {
+          console.error("Error al cargar municipios:", error);
+        } else {
+          Swal.fire({
+            title: "Error",
+            text: "No se pudieron cargar los municipios",
+            icon: "error",
+            draggable: true,
+          });
+        }
+      }
+    };
+    const cargarParroquias = async () => {
+      try {
+        if (formDataPersonales.municipio !== null || formDataPersonales.municipio !== 0) {
+          const response = await axios.get(
+            `${API_Host}/api/parroquias/${formDataPersonales.municipio}`
+          );
+          console.log(response.data);
+          setParroquias(response.data);
+        } else {
+          console.log("Municipios Vacio");
+        }
+      } catch (error) {
+        if (formDataPersonales.municipio !== null || formDataPersonales.municipio !== 0) {
+          console.error("Error al cargar parroquias:", error);
+        } else {
+          Swal.fire({
+            title: "Error",
+            text: "No se pudieron cargar las parroquias",
+            icon: "error",
+            draggable: true,
+          });
+        }
+      }
+    };
+    cargarEstados();
+    cargarMunicipios();
+    cargarParroquias();
+  }, [formDataPersonales]);
 
   // const handleChange = (e) => {
   //   const { name, value } = e.target;
@@ -146,7 +221,11 @@ function DatosPersonales({ formDataPersonales, handleChange }) {
             <FloatingLabel controlId="state" label="Estado" className="mb-3">
               <Form.Select name="state" value={formDataPersonales.state} onChange={handleChange}>
                 <option value="">Seleccione...</option>
-                <option value="Distrito Capital">Distrito Capital</option>
+                {estados.map((estado) => (
+                  <option key={estado.estado} value={estado.id_estado}>
+                    {estado.estado}
+                  </option>
+                ))}
               </Form.Select>
             </FloatingLabel>
           </Col>
@@ -158,7 +237,11 @@ function DatosPersonales({ formDataPersonales, handleChange }) {
                 onChange={handleChange}
               >
                 <option value="">Seleccione...</option>
-                <option value="Libertador">Libertador</option>
+                {municipios.map((municipio) => (
+                  <option key={municipio.id_municipio} value={municipio.id_municipio}>
+                    {municipio.municipio}
+                  </option>
+                ))}
               </Form.Select>
             </FloatingLabel>
           </Col>
@@ -170,7 +253,11 @@ function DatosPersonales({ formDataPersonales, handleChange }) {
                 onChange={handleChange}
               >
                 <option value="">Seleccione...</option>
-                <option value="San Juan">San Juan</option>
+                {parroquias.map((parroquia) => (
+                  <option key={parroquia.id_parroquia} value={parroquia.id_parroquia}>
+                    {parroquia.parroquia}
+                  </option>
+                ))}
               </Form.Select>
             </FloatingLabel>
           </Col>

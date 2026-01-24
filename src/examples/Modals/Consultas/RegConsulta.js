@@ -115,7 +115,7 @@ function RegConsultas({ close, show, fetch }) {
   };
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, key } = e.target;
     setFormDataConsultas((prev) => ({
       ...prev,
       [name]: value,
@@ -123,6 +123,9 @@ function RegConsultas({ close, show, fetch }) {
     if (name === "ci" && value.length >= 6) {
       // console.log(value);
       consultaPaciente(value);
+    }
+    if (name === "state") {
+      console.log(key);
     }
     if (name === "exceptionCheck") {
       setExceptionActive(e.target.checked);

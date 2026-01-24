@@ -31,6 +31,7 @@ import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
 import RegUsuarios from "examples/Modals/Usuarios/RegUsuario";
 import DataTable from "examples/Tables/DataTable";
+import UpdateUser from "examples/Modals/Usuarios/UpdateUser";
 // import Carnet from "examples/Cards/Carnet";
 
 // Data
@@ -39,12 +40,22 @@ import projectsTableData from "layouts/tables/data/projectsTableData";
 
 function Users() {
   const [show, setShow] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+  const [getId, setGetId] = useState(null);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const handleClose = () => setShow(false);
   let i = 1;
   const handleShow = () => setShow(true);
+  const handleShowInfo = (a) => {
+    setGetId(a);
+    setShowEdit(true);
+  };
+  const handleCloseInfo = () => {
+    setShowEdit(false);
+    setGetId(null);
+  };
   // const { columns, rows } = authorsTableData();
   // const { columns: pColumns, rows: pRows } = projectsTableData();
   const API_Host = process.env.REACT_APP_API_URL;
@@ -96,8 +107,13 @@ function Users() {
     fechacreacion: formatDateForDisplay(user.fechacreacion),
     actions: (
       <MDBox display="flex" gap={1}>
-        <MDButton variant="text" color="info" size="small">
-          <Icon>edit</Icon>&nbsp;Editar
+        <MDButton
+          variant="text"
+          color="info"
+          size="large"
+          onClick={() => handleShowInfo(user.id_usuario)}
+        >
+          <Icon>edit</Icon>&nbsp;
         </MDButton>
         {/* <MDButton variant="text" color="error" size="small">
           <Icon>delete</Icon>&nbsp;Eliminar
@@ -156,6 +172,12 @@ function Users() {
                 </MDButton>
               </MDBox>
               <MDBox pt={3}>
+                <UpdateUser
+                  close={handleCloseInfo}
+                  show={showEdit}
+                  fetch={fetchUsers}
+                  id_usuario={getId}
+                />
                 <RegUsuarios close={handleClose} show={show} fetch={fetchUsers} />
                 {/* <Carnet number={4562112245947852} holder="jack peterson" expires="11/22" /> */}
               </MDBox>

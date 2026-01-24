@@ -540,74 +540,6 @@ async function generarEgresoWord(data) {
     }
 }
 
-// Función auxiliar para crear plantilla por defecto si no existe
-async function crearPlantillaPorDefecto(data) {
-    const templatePath = path.join(__dirname, 'plantillas', 'consentimiento_informado.docx');
-    
-    // Crear un documento Word simple con los placeholders
-    const simpleContent = `
-        CONSENTIMIENTO INFORMADO PARA OXIGENOTERAPIA HIPERBÁRICA
-        
-        1. Identificación del paciente/ representante legal.
-        
-        Nombres y Apellidos del paciente: {paciente_nombres} {paciente_apellidos}
-        edad: {paciente_edad} C.I:{paciente_cedula} 
-        dirección de domicilio: {paciente_direccion}.
-        
-        2. Información general y consentimiento:
-        
-        En mi calidad de paciente y en pleno uso de mis facultades mentales y de
-        mis derechos de salud, el Dr.{medico_nombres} {medico_apellidos}
-        con registro en MPPS:{medico_registro} del servicio de medicina
-        hiperbárica y subacuática, me ha informado en forma confidencial,
-        respetuosa, clara y comprensible el diagnostico de mi/ su enfermedad el cual
-        es:{diagnostico},
-        y de la necesidad de recibir oxigenoterapia hiperbárica en el servicio
-        de medicina hiperbárica y subacuática como parte del tratamiento
-        complementario a mi diagnostico establecido.
-        
-        Consiento de manera libre, voluntaria e informada en ser sometido (a) a
-        oxigenoterapia hiperbárica, que a continuación se detalla el protocolo a
-        emplear: {protocolo}.
-        
-        Se me ha explicado los beneficios que se esperan de la oxigenoterapia al
-        cual me someto...
-        
-        Lo cual ( SI) {aceptacion_si} o ( NO){aceptacion_no} acepto...
-        
-        Firma del paciente/ firma del tutor o familiar
-        
-        C.I: {paciente_cedula}
-        
-        Fecha y hora: {fecha_hora}
-        
-        Firma y sello del Médico: {medico_firma}
-    `;
-    
-    // Guardar como archivo temporal
-    fs.writeFileSync(templatePath, simpleContent);
-    
-    // Volver a llamar a la función principal
-    return await generarConsentimientoWord(data);
-}
-
-// Función para convertir Word a PDF
-async function convertirConsentimientoAPDF(wordBuffer) {
-    try {
-        // Convertir Word a HTML
-        const htmlContent = await convertirWordAHTMLConsentimiento(wordBuffer);
-        
-        // Generar PDF desde HTML
-        const pdfBuffer = await generarPDFDesdeHTMLConsentimiento(htmlContent);
-        
-        return pdfBuffer;
-        
-    } catch (error) {
-        console.error('Error en convertirConsentimientoAPDF:', error);
-        throw error;
-    }
-}
-
 // Convertir Word a HTML usando mammoth
 async function convertirWordAHTMLConsentimiento(wordBuffer) {
     // Guardar temporalmente el buffer como archivo
@@ -796,6 +728,33 @@ async function convertirWordAPDF(wordBuffer) {
     // Tu implementación original
 }
 
+app.get('/api/selectUser/:id', async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const result = await pool.query(
+            'SELECT nuser, rolid FROM usuarios WHERE id_usuario = $1',
+            [id]
+        );
+        if (result.rows.length > 0) {
+            res.json(result.rows[0]);
+        } else {
+            res.json({});
+        }
+    } catch (err) {
+        console.error('Error detallado:', {
+            message: err.message,
+            stack: err.stack,
+            query: 'SELECT id_persona FROM persona WHERE ci = $1',
+            parametro: id
+        });
+        res.status(500).json({ 
+            error: 'Error al consultar la base de datos',
+            detalle: err.message 
+        });
+    }
+});
+
 // Ruta para registrar un nuevo usuario
 app.post('/api/regUser', async (req, res) => {
     const { id_persona, username, password, status, rol } = req.body;
@@ -809,6 +768,76 @@ app.post('/api/regUser', async (req, res) => {
         res.status(201).json(result.rows[0]);
     } catch (err) {
         console.log(err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Endpoint para actualizar usuario por ID
+app.put('/api/updateUsers/:id', async (req, res) => {
+    const { id } = req.params;
+    const { username, password, status, rol, id_persona } = req.body;
+
+    try {
+        // Construir la consulta dinámicamente basada en los campos proporcionados
+        const fields = [];
+        const values = [];
+        let paramIndex = 1;
+
+        if (username !== undefined) {
+            fields.push(`nuser = $${paramIndex}`);
+            values.push(username);
+            paramIndex++;
+        }
+
+        if (password !== undefined) {
+            const passwordHash = hashPassword(password);
+            fields.push(`password = $${paramIndex}`);
+            values.push(passwordHash);
+            paramIndex++;
+        }
+
+        if (rol !== undefined) {
+            fields.push(`rolid = $${paramIndex}`);
+            values.push(rol);
+            paramIndex++;
+        }
+
+        if (status !== undefined) {
+            fields.push(`status = $${paramIndex}`);
+            values.push(status);
+            paramIndex++;
+        }
+
+        if (id_persona !== undefined) {
+            fields.push(`id_persona = $${paramIndex}`);
+            values.push(id_persona);
+            paramIndex++;
+        }
+
+        // Verificar que hay campos para actualizar
+        if (fields.length === 0) {
+            return res.status(400).json({ error: 'No hay campos para actualizar' });
+        }
+
+        // Agregar el ID al final de los valores
+        values.push(id);
+
+        const query = `
+            UPDATE usuarios 
+            SET ${fields.join(', ')}, updated_at = CURRENT_TIMESTAMP
+            WHERE id = $${paramIndex} 
+            RETURNING *
+        `;
+
+        const result = await pool.query(query, values);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error(err);
         res.status(500).json({ error: err.message });
     }
 });
@@ -912,9 +941,16 @@ app.get('/api/pacienteII/:ci', async (req, res) => {
 
 app.post('/api/regDatosPersonales', async (req, res) => {
     const { personaId, mail, phone, bdate, scivil, studios, ocupation, state, municipio, parroquia, dirhouse } = req.body;
-    const direccionCompleta = state + ", Municipio " + municipio + ", Parroquia " + parroquia + ", " + dirhouse;
-
+    
     try {
+        const resEstadoNombre = await pool.query("SELECT estado FROM estados WHERE id_estado = $1", [state]);
+        const stateNom = resEstadoNombre.rows[0].estado;
+        const resMunicipioNombre = await pool.query("SELECT municipio FROM municipios WHERE id_municipio = $1", [municipio]);
+        const municipioNom = resMunicipioNombre.rows[0].municipio;
+        const resParroquiaNombre = await pool.query("SELECT parroquia FROM parroquias WHERE id_parroquia = $1", [parroquia]);
+        const parroquiaNom = resParroquiaNombre.rows[0].parroquia;
+        const direccionCompleta = stateNom + ", Municipio " + municipioNom + ", Parroquia " + parroquiaNom + ", " + dirhouse;
+      
         const result = await pool.query(
             'INSERT INTO datospersonales (personaid, correo, telefono, fechanac, edocivil, nivinst, profesion, direccion) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id_dpersonales',
             [personaId, mail, phone, bdate, scivil, studios, ocupation, direccionCompleta]
@@ -976,6 +1012,7 @@ app.get('/api/medicos', async (req, res) => {
 app.post('/api/regPacientes', upload.single('referencia'), async (req, res) => {
     const { dpersonalesId, excepcionD, representanteid, typePaciente, carnetA, carnetM, gradoM, componenteM } = req.body;
     const referenciaDir = req.file ? req.file.path : null;
+
     try {
         const result = await pool.query(
             'INSERT INTO paciente (dpersonalesid, referencia, excepcion, representanteid, tipopaciente, carnetafiliado, carnetmilitar, gradoM, componenteM) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
@@ -1594,6 +1631,57 @@ app.get('/api/avancesConsultas/:id_conmed', async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(501).send('Error al obtener los datos');
+    }
+});
+
+app.get('/api/estados', async (req, res) => {
+    // const { id_conmed } = req.params;
+    try {
+      const { rows } = await pool.query(`
+          SELECT
+              id_estado,
+              estado,
+              iso_3166_2
+          FROM estados
+      `);
+        res.json(rows);
+    } catch (err) {
+        console.error(err);
+        res.status(501).send('Error al obtener los estados.');
+    }
+});
+
+app.get('/api/municipios/:id_estado', async (req, res) => {
+    const { id_estado } = req.params;
+    try {
+      const { rows } = await pool.query(`
+          SELECT
+              id_municipio,
+              municipio
+          FROM municipios
+              WHERE id_estado = $1
+      `, [id_estado]);
+        res.json(rows);
+    } catch (err) {
+        console.error(err);
+        res.status(501).send('Error al obtener los municipios.');
+    }
+});
+
+app.get('/api/parroquias/:id_municipio', async (req, res) => {
+    const { id_municipio } = req.params;
+    try {
+      const { rows } = await pool.query(`
+          SELECT 
+              id_parroquia,
+              parroquia
+          FROM parroquias
+              WHERE id_municipio = $1
+      `, [id_municipio]);
+        res.json(rows);
+    } catch (err) {
+        console.error(err);
+        res.status(501).send('Error al obtener las parroquias.');
     }
 });
 

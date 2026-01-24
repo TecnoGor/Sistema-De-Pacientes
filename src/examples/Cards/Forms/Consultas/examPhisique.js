@@ -113,8 +113,8 @@ function ExamPhisique({ formExamPhisique, handleChange }) {
               <Form.Control
                 type="text"
                 placeholder="Descripcion"
-                value={formExamPhisique.lastname || ""}
-                name="lastname"
+                value={formExamPhisique.ojos || ""}
+                name="ojos"
                 onChange={handleChange}
               />
             </Form.Group>
